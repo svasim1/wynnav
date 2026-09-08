@@ -1,0 +1,24 @@
+{
+	"schemaVersion": 1,
+	"id": "wynnav",
+	"version": "${version}",
+	"name": "Wynnav",
+	"description": "A world map and waypoints for Wynncraft.",
+	"authors": [
+		"svante"
+	],
+	"license": "All-Rights-Reserved",
+	"icon": "assets/wynnav/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"dev.wynnav.WynnavClient"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~1.21.11",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}
