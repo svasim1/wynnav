@@ -3,5 +3,9 @@
 	"key.wynnav.open_map": "Open world map",
 	"wynnav.screen.map": "World Map",
 	"wynnav.map.recenter": "Center on me",
-	"wynnav.map.loading": "Downloading map..."
+	"wynnav.map.waypoints": "Waypoints",
+	"wynnav.map.loading": "Downloading map...",
+	"wynnav.waypoint.new": "New waypoint",
+	"wynnav.waypoint.edit": "Edit waypoint",
+	"wynnav.waypoint.save": "Save"
 }

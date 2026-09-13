@@ -5,6 +5,7 @@ import dev.wynnav.map.MapMarkers;
 import dev.wynnav.map.MapTiles;
 import dev.wynnav.map.MarkerIcons;
 import dev.wynnav.ui.WorldMapScreen;
+import dev.wynnav.waypoint.Waypoints;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
@@ -15,6 +16,7 @@ public class WynnavClient implements ClientModInitializer {
 	private static final MapTiles TILES = new MapTiles();
 	private static final MapMarkers MARKERS = new MapMarkers();
 	private static final MarkerIcons ICONS = new MarkerIcons();
+	private static final Waypoints WAYPOINTS = new Waypoints();
 	private static KeyMapping openMapKey;
 
 	public static MapTiles tiles() {
@@ -29,12 +31,17 @@ public class WynnavClient implements ClientModInitializer {
 		return ICONS;
 	}
 
+	public static Waypoints waypoints() {
+		return WAYPOINTS;
+	}
+
 	public static KeyMapping openMapKey() {
 		return openMapKey;
 	}
 
 	@Override
 	public void onInitializeClient() {
+		WAYPOINTS.load();
 		TILES.load();
 		MARKERS.load();
 
