@@ -7,5 +7,6 @@
 	"wynnav.map.loading": "Downloading map...",
 	"wynnav.waypoint.new": "New waypoint",
 	"wynnav.waypoint.edit": "Edit waypoint",
-	"wynnav.waypoint.save": "Save"
+	"wynnav.waypoint.save": "Save",
+	"wynnav.settings": "Wynnav Settings"
 }

@@ -13,6 +13,9 @@
 	"entrypoints": {
 		"client": [
 			"dev.wynnav.WynnavClient"
+		],
+		"modmenu": [
+			"dev.wynnav.ui.ModMenuIntegration"
 		]
 	},
 	"depends": {
@@ -20,5 +23,8 @@
 		"minecraft": "~1.21.11",
 		"java": ">=21",
 		"fabric-api": "*"
+	},
+	"suggests": {
+		"modmenu": "*"
 	}
 }
