@@ -24,6 +24,9 @@
 		"java": ">=21",
 		"fabric-api": "*"
 	},
+	"mixins": [
+		"wynnav.mixins.json"
+	],
 	"suggests": {
 		"modmenu": "*"
 	}

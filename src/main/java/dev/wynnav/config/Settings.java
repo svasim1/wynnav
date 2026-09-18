@@ -43,6 +43,8 @@ public final class Settings {
 
 	public WorldMarker worldMarker = new WorldMarker();
 	public Minimap minimap = new Minimap();
+	/** Create a waypoint automatically where you die. */
+	public boolean deathWaypoints = true;
 
 	private static final Path FILE = Wynnav.configDir().resolve("settings.json");
 	private static Settings instance;

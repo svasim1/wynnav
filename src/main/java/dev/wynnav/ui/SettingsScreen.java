@@ -45,6 +45,7 @@ public final class SettingsScreen extends Screen {
 		add(0, toggle("Floating icon", marker.showIcon, value -> marker.showIcon = value));
 		add(0, slider("Size", marker.size, 0.5, 3, v -> String.format(Locale.ROOT, "%.1fx", v), v -> marker.size = v));
 		add(0, slider("Opacity", marker.opacity, 0.1, 1, SettingsScreen::percent, v -> marker.opacity = v));
+		add(0, toggle("Death waypoint", settings.deathWaypoints, value -> settings.deathWaypoints = value));
 
 		Settings.Minimap minimap = settings.minimap;
 		add(1, toggle("Minimap", minimap.enabled, value -> minimap.enabled = value));

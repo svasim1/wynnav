@@ -7,6 +7,7 @@ import dev.wynnav.map.MapMarkers;
 import dev.wynnav.map.MapTiles;
 import dev.wynnav.map.MarkerIcons;
 import dev.wynnav.ui.WorldMapScreen;
+import dev.wynnav.waypoint.DeathPoint;
 import dev.wynnav.waypoint.Waypoints;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -55,6 +56,7 @@ public class WynnavClient implements ClientModInitializer {
 			new KeyMapping("key.wynnav.open_map", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_M, category));
 
 		WorldMarker worldMarker = new WorldMarker(WAYPOINTS);
+		DeathPoint deathPoint = new DeathPoint(WAYPOINTS);
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			while (openMapKey.consumeClick()) {
 				if (client.screen == null && client.player != null) {
@@ -62,6 +64,7 @@ public class WynnavClient implements ClientModInitializer {
 				}
 			}
 			worldMarker.tick(client);
+			deathPoint.tick(client);
 		});
 
 		Minimap minimap = new Minimap();
