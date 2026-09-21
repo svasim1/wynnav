@@ -2,11 +2,12 @@ package dev.wynnav.render;
 
 import dev.wynnav.WynnavClient;
 import dev.wynnav.map.MapTiles;
+import dev.wynnav.map.Territories;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 
-/** Draws world-anchored layers (terrain) for any {@link MapView} and clip shape. */
+/** Draws world-anchored layers (terrain, territory areas) for any {@link MapView} and clip shape. */
 public final class MapPainter {
 	private MapPainter() {}
 
@@ -57,5 +58,35 @@ public final class MapPainter {
 			}
 		}
 		return true;
+	}
+
+	public static void drawTerritories(GuiGraphics graphics, MapView view, Polygons.Shape clip) {
+		double[] b = visibleWorldBounds(view, clip);
+		for (Territories.Territory territory : WynnavClient.territories().territories()) {
+			if (territory.maxX() + 1 < b[0] || territory.minX() > b[2] || territory.maxZ() + 1 < b[1] || territory.minZ() > b[3]) {
+				continue;
+			}
+			Polygons.Shape area = Polygons.clip(worldQuad(view, territory.minX(), territory.minZ(), territory.maxX() + 1, territory.maxZ() + 1), clip);
+			if (area == null) {
+				continue;
+			}
+			int rgb = territory.color() & 0xFFFFFF;
+			Polygons.fill(graphics, area, 0x38000000 | rgb);
+			Polygons.outline(graphics, area, 1, 0xC0000000 | rgb);
+		}
+	}
+
+	/** A filled circle in world space, e.g. a world event's area. */
+	public static void drawWorldCircle(GuiGraphics graphics, MapView view, Polygons.Shape clip, double x, double z, double radius, int color) {
+		float sx = view.screenX(x, z);
+		float sy = view.screenY(x, z);
+		float r = (float) (radius * view.zoom());
+		if (r < 2) {
+			return;
+		}
+		Polygons.Shape circle = Polygons.clip(Polygons.Shape.circle(sx, sy, r, 32), clip);
+		if (circle != null) {
+			Polygons.fill(graphics, circle, color);
+		}
 	}
 }

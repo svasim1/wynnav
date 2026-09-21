@@ -4,6 +4,7 @@ import dev.wynnav.Wynnav;
 import dev.wynnav.WynnavClient;
 import dev.wynnav.config.Settings;
 import dev.wynnav.map.MapMarkers;
+import dev.wynnav.map.Territories;
 import dev.wynnav.render.MapPainter;
 import dev.wynnav.render.Icons;
 import dev.wynnav.render.MapView;
@@ -96,6 +97,10 @@ public final class Minimap {
 			String coords = player.getBlockX() + ", " + player.getBlockY() + ", " + player.getBlockZ();
 			graphics.drawCenteredString(font, coords, (int) cx, textY, 0xFFE0E0E0);
 			textY += 10;
+		}
+		Territories.Territory territory = WynnavClient.territories().at(pos.x, pos.z);
+		if (territory != null) {
+			graphics.drawCenteredString(font, territory.name(), (int) cx, textY, 0xFFFFD866);
 		}
 	}
 

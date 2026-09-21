@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.wynnav.Wynnav;
+import dev.wynnav.config.Settings;
 import dev.wynnav.net.CachedFetcher;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -72,9 +73,9 @@ public final class MapMarkers {
 	}
 
 	public record Marker(String name, String icon, int x, int y, int z, Category category) {
-		/** Minor markers are hidden when zoomed far out. */
+		/** Respects the user's category filter and hides minor markers when zoomed far out. */
 		public boolean visibleAt(double zoom) {
-			return zoom >= category.minZoom;
+			return zoom >= category.minZoom && !Settings.get().layers.hiddenCategories.contains(category);
 		}
 	}
 

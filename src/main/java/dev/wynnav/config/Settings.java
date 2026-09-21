@@ -1,10 +1,14 @@
 package dev.wynnav.config;
 
 import dev.wynnav.Wynnav;
+import dev.wynnav.map.Gathering;
+import dev.wynnav.map.MapMarkers;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.EnumSet;
+import java.util.Set;
 
 /**
  * All user settings, saved as {@code config/wynnav/settings.json}. Fields are public and mutable
@@ -41,8 +45,20 @@ public final class Settings {
 		public boolean showMarkers = true;
 	}
 
+	public static final class MapLayers {
+		public Set<MapMarkers.Category> hiddenCategories = EnumSet.noneOf(MapMarkers.Category.class);
+		public boolean territories = false;
+		public boolean gathering = false;
+		public Set<Gathering.Profession> gatheringProfessions = EnumSet.allOf(Gathering.Profession.class);
+		public int gatheringMinLevel = 1;
+		public int gatheringMaxLevel = 120;
+		public boolean camps = true;
+		public boolean worldEvents = true;
+	}
+
 	public WorldMarker worldMarker = new WorldMarker();
 	public Minimap minimap = new Minimap();
+	public MapLayers layers = new MapLayers();
 	/** Create a waypoint automatically where you die. */
 	public boolean deathWaypoints = true;
 
@@ -78,6 +94,15 @@ public final class Settings {
 		}
 		if (minimap == null) {
 			minimap = defaults.minimap;
+		}
+		if (layers == null) {
+			layers = defaults.layers;
+		}
+		if (layers.hiddenCategories == null) {
+			layers.hiddenCategories = defaults.layers.hiddenCategories;
+		}
+		if (layers.gatheringProfessions == null) {
+			layers.gatheringProfessions = defaults.layers.gatheringProfessions;
 		}
 		return this;
 	}

@@ -3,9 +3,12 @@ package dev.wynnav;
 import com.mojang.blaze3d.platform.InputConstants;
 import dev.wynnav.hud.Minimap;
 import dev.wynnav.hud.WorldMarker;
+import dev.wynnav.map.Content;
+import dev.wynnav.map.Gathering;
 import dev.wynnav.map.MapMarkers;
 import dev.wynnav.map.MapTiles;
 import dev.wynnav.map.MarkerIcons;
+import dev.wynnav.map.Territories;
 import dev.wynnav.ui.WorldMapScreen;
 import dev.wynnav.waypoint.DeathPoint;
 import dev.wynnav.waypoint.Waypoints;
@@ -22,7 +25,12 @@ public class WynnavClient implements ClientModInitializer {
 	private static final MapTiles TILES = new MapTiles();
 	private static final MapMarkers MARKERS = new MapMarkers();
 	private static final MarkerIcons ICONS = new MarkerIcons();
+	private static final Territories TERRITORIES = new Territories();
+	private static final Gathering GATHERING = new Gathering();
+	private static final Content CONTENT = new Content();
 	private static final Waypoints WAYPOINTS = new Waypoints();
+	// Territories and world event schedules change while playing.
+	private static final int REFRESH_TICKS = 20 * 60 * 5;
 	private static KeyMapping openMapKey;
 
 	public static MapTiles tiles() {
@@ -35,6 +43,18 @@ public class WynnavClient implements ClientModInitializer {
 
 	public static MarkerIcons icons() {
 		return ICONS;
+	}
+
+	public static Territories territories() {
+		return TERRITORIES;
+	}
+
+	public static Gathering gathering() {
+		return GATHERING;
+	}
+
+	public static Content content() {
+		return CONTENT;
 	}
 
 	public static Waypoints waypoints() {
@@ -50,6 +70,9 @@ public class WynnavClient implements ClientModInitializer {
 		WAYPOINTS.load();
 		TILES.load();
 		MARKERS.load();
+		TERRITORIES.load();
+		GATHERING.load();
+		CONTENT.load();
 
 		KeyMapping.Category category = KeyMapping.Category.register(Wynnav.id("keys"));
 		openMapKey = KeyBindingHelper.registerKeyBinding(
@@ -57,6 +80,7 @@ public class WynnavClient implements ClientModInitializer {
 
 		WorldMarker worldMarker = new WorldMarker(WAYPOINTS);
 		DeathPoint deathPoint = new DeathPoint(WAYPOINTS);
+		int[] ticks = {0};
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			while (openMapKey.consumeClick()) {
 				if (client.screen == null && client.player != null) {
@@ -65,6 +89,11 @@ public class WynnavClient implements ClientModInitializer {
 			}
 			worldMarker.tick(client);
 			deathPoint.tick(client);
+			ticks[0]++;
+			if (ticks[0] % REFRESH_TICKS == 0) {
+				TERRITORIES.load();
+				CONTENT.load();
+			}
 		});
 
 		Minimap minimap = new Minimap();

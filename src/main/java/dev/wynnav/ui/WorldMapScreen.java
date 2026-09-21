@@ -2,7 +2,11 @@ package dev.wynnav.ui;
 
 import dev.wynnav.Wynnav;
 import dev.wynnav.WynnavClient;
+import dev.wynnav.config.Settings;
+import dev.wynnav.map.Content;
+import dev.wynnav.map.Gathering;
 import dev.wynnav.map.MapMarkers;
+import dev.wynnav.map.Territories;
 import dev.wynnav.render.Icons;
 import dev.wynnav.render.MapPainter;
 import dev.wynnav.render.MapView;
@@ -37,17 +41,20 @@ public final class WorldMapScreen extends Screen {
 	private static final Identifier PLAYER_ARROW = Wynnav.id("textures/gui/player_arrow.png");
 	private static final Identifier WAYPOINT_ICON = Wynnav.id("textures/gui/waypoint.png");
 	private static final Identifier RECENTER_ICON = Wynnav.id("textures/gui/recenter.png");
+	private static final Identifier CAMP_ICON = Wynnav.id("textures/gui/camp.png");
+	private static final Identifier EVENT_ICON = Wynnav.id("textures/gui/event.png");
 
 	private static final double MIN_ZOOM = 0.05;
 	private static final double MAX_ZOOM = 8;
 	private static final double ZOOM_STEP = 1.2;
+	private static final double GATHERING_MIN_ZOOM = 0.35;
 	private static final int DRAG_THRESHOLD = 3;
 	private static final int HOVER_RADIUS = 7;
 	private static final int ICON_SIZE = 14;
 	private static final int BACKGROUND = 0xFF0E1A26;
 	private static final int TOP_BAR = 30;
 
-	enum Panel { NONE, WAYPOINTS }
+	enum Panel { NONE, WAYPOINTS, LAYERS }
 
 	// Remembered between openings so the map feels the same each time.
 	private static double lastZoom = 1;
@@ -55,7 +62,8 @@ public final class WorldMapScreen extends Screen {
 
 	/**
 	 * Something under the cursor: what to call it, what to offer when it is clicked, and what
-	 * tracking it means. Without a target it is an area, and right-clicking it means "this spot".
+	 * tracking it means. Areas (territories) cover the whole map, so right-clicking one still means
+	 * "this spot".
 	 */
 	private record Hover(String label, Supplier<PopupMenu> menu, @Nullable Supplier<Waypoint> target) {
 		boolean area() {
@@ -78,6 +86,7 @@ public final class WorldMapScreen extends Screen {
 
 	private @Nullable PopupMenu popup;
 	private final WaypointSidebar sidebar = new WaypointSidebar(this);
+	private final LayersPanel layersPanel = new LayersPanel();
 	private Panel panel = lastPanel;
 	private Button recenterButton;
 
@@ -96,10 +105,18 @@ public final class WorldMapScreen extends Screen {
 		int right = width - 6;
 		recenterButton = addRenderableWidget(new IconButton(right - 104, top, 104, 20, RECENTER_ICON,
 			Component.translatable("wynnav.map.recenter"), button -> recenter()));
+		right -= 108;
 		addRenderableWidget(Button.builder(Component.translatable("wynnav.map.waypoints"), button -> togglePanel(Panel.WAYPOINTS))
 			.bounds(right - 66, top, 66, 20).build());
+		right -= 70;
+		addRenderableWidget(Button.builder(Component.translatable("wynnav.map.layers"), button -> togglePanel(Panel.LAYERS))
+			.bounds(right - 50, top, 50, 20).build());
+		right -= 54;
+		addRenderableWidget(Button.builder(Component.translatable("wynnav.map.settings"), button -> minecraft.setScreen(new SettingsScreen(this)))
+			.bounds(right - 56, top, 56, 20).build());
 
 		sidebar.layout(width - WaypointSidebar.WIDTH, TOP_BAR, height - 22);
+		layersPanel.layout(width - LayersPanel.WIDTH, TOP_BAR, height - 22);
 	}
 
 	MapView view() {
@@ -178,7 +195,23 @@ public final class WorldMapScreen extends Screen {
 	}
 
 	PopupMenu markerMenu(MapMarkers.Marker marker) {
-		return pointMenu(marker.name(), List.of(), marker.x(), marker.y(), marker.z());
+		Content.Info raid = marker.category() == MapMarkers.Category.DUNGEONS ? WynnavClient.content().raid(marker.name()) : null;
+		return pointMenu(marker.name(), raid != null ? raid.describe() : List.of(), marker.x(), marker.y(), marker.z());
+	}
+
+	PopupMenu contentMenu(Content.Info info) {
+		return pointMenu(info.name(), info.describe(), info.x(), info.y(), info.z());
+	}
+
+	PopupMenu territoryMenu(Territories.Territory territory) {
+		PopupMenu menu = new PopupMenu(territory.name());
+		if (territory.guild() != null) {
+			menu.detail(territory.guild() + (territory.guildPrefix() != null ? " [" + territory.guildPrefix() + "]" : ""));
+		}
+		if (territory.headquarters()) {
+			menu.detail("Guild headquarters");
+		}
+		return menu;
 	}
 
 	private PopupMenu locationMenu(int worldX, int worldZ) {
@@ -186,6 +219,10 @@ public final class WorldMapScreen extends Screen {
 		int count = waypoints.all().size();
 		Waypoint draft = Waypoint.create("Waypoint " + (count + 1), worldX, null, worldZ, Waypoint.PALETTE[count % Waypoint.PALETTE.length]);
 		PopupMenu menu = new PopupMenu(coords);
+		Territories.Territory territory = WynnavClient.territories().at(worldX, worldZ);
+		if (territory != null) {
+			menu.detail(territory.name());
+		}
 		return menu
 			.action("Add waypoint here...", () -> openEditor(null, draft))
 			.action("Track this spot", () -> waypoints.track(draft.withValues("Map location", worldX, null, worldZ, 0xFFFFFFFF)))
@@ -210,12 +247,58 @@ public final class WorldMapScreen extends Screen {
 				return new Hover(marker.name(), () -> markerMenu(marker), () -> pointTarget(marker.name(), marker.x(), marker.y(), marker.z()));
 			}
 		}
+		Settings.MapLayers layers = Settings.get().layers;
+		if (layers.camps) {
+			for (Content.Info camp : WynnavClient.content().camps()) {
+				if (camp.x() != null && near(view, camp.x() + 0.5, camp.z() + 0.5, mouseX, mouseY)) {
+					return new Hover(camp.name() + " (camp, Lv. " + camp.level() + ")", () -> contentMenu(camp),
+						() -> pointTarget(camp.name(), camp.x(), camp.y(), camp.z()));
+				}
+			}
+		}
+		if (layers.worldEvents) {
+			for (Content.Info event : WynnavClient.content().worldEvents()) {
+				if (event.x() != null && near(view, event.x() + 0.5, event.z() + 0.5, mouseX, mouseY)) {
+					return new Hover(event.name() + " (world event, Lv. " + event.level() + ")", () -> contentMenu(event),
+						() -> pointTarget(event.name(), event.x(), event.y(), event.z()));
+				}
+			}
+		}
+		if (layers.gathering && zoom >= GATHERING_MIN_ZOOM) {
+			double r = HOVER_RADIUS / zoom + 1;
+			double wx = view.worldX(mouseX, mouseY);
+			double wz = view.worldZ(mouseX, mouseY);
+			Gathering.Node[] found = new Gathering.Node[1];
+			WynnavClient.gathering().forEachIn(wx - r, wz - r, wx + r, wz + r, node -> {
+				if (found[0] == null && gatheringVisible(node, layers) && near(view, node.x() + 0.5, node.z() + 0.5, mouseX, mouseY)) {
+					found[0] = node;
+				}
+			});
+			Gathering.Node node = found[0];
+			if (node != null) {
+				return new Hover(node.displayName(), () -> pointMenu(node.displayName(), List.of(), node.x(), node.y(), node.z()),
+					() -> pointTarget(node.displayName(), node.x(), node.y(), node.z()));
+			}
+		}
+		if (layers.territories) {
+			Territories.Territory territory = WynnavClient.territories().at(view.worldX(mouseX, mouseY), view.worldZ(mouseX, mouseY));
+			if (territory != null) {
+				String label = territory.guildPrefix() != null ? territory.name() + " [" + territory.guildPrefix() + "]" : territory.name();
+				return new Hover(label, () -> territoryMenu(territory), null);
+			}
+		}
 		return null;
+	}
+
+	private static boolean gatheringVisible(Gathering.Node node, Settings.MapLayers layers) {
+		return layers.gatheringProfessions.contains(node.profession())
+			&& node.level() >= layers.gatheringMinLevel && node.level() <= layers.gatheringMaxLevel;
 	}
 
 	private boolean overPanel(double mouseX, double mouseY) {
 		return switch (panel) {
 			case WAYPOINTS -> sidebar.contains(mouseX, mouseY);
+			case LAYERS -> layersPanel.contains(mouseX, mouseY);
 			case NONE -> false;
 		};
 	}
@@ -242,7 +325,7 @@ public final class WorldMapScreen extends Screen {
 			return true;
 		}
 		if (overPanel(mx, my)) {
-			return sidebar.mouseClicked(mx, my, event.button());
+			return panel == Panel.WAYPOINTS ? sidebar.mouseClicked(mx, my, event.button()) : layersPanel.mouseClicked(mx, my);
 		}
 
 		if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
@@ -300,7 +383,11 @@ public final class WorldMapScreen extends Screen {
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
 		if (overPanel(mouseX, mouseY)) {
-			sidebar.scroll(scrollY);
+			if (panel == Panel.WAYPOINTS) {
+				sidebar.scroll(scrollY);
+			} else {
+				layersPanel.scroll(scrollY);
+			}
 			return true;
 		}
 		popup = null;
@@ -350,13 +437,30 @@ public final class WorldMapScreen extends Screen {
 		}
 		MapView view = view();
 		Polygons.Shape screenClip = Polygons.Shape.rectangle(0, 0, width, height);
+		Settings.MapLayers layers = Settings.get().layers;
 
 		if (!MapPainter.drawTiles(graphics, view, screenClip, 1)) {
 			graphics.drawCenteredString(font, Component.translatable("wynnav.map.loading"), width / 2, height / 2 - 20, 0xFFA0A8B0);
 		}
+		if (layers.territories) {
+			MapPainter.drawTerritories(graphics, view, screenClip);
+			renderTerritoryLabels(graphics, view);
+		}
+		if (layers.worldEvents) {
+			for (Content.Info event : WynnavClient.content().worldEvents()) {
+				if (event.x() != null && event.radius() > 0) {
+					MapPainter.drawWorldCircle(graphics, view, screenClip, event.x() + 0.5, event.z() + 0.5, event.radius(), 0x30FF5252);
+				}
+			}
+		}
+		if (layers.gathering && zoom >= GATHERING_MIN_ZOOM) {
+			renderGathering(graphics, view, layers);
+		}
+
 		boolean interactive = popup == null && !dragging && !overPanel(mouseX, mouseY) && mouseY > TOP_BAR;
 		Hover hover = interactive ? hoverAt(mouseX, mouseY) : null;
 		renderMarkers(graphics, view);
+		renderContent(graphics, view, layers);
 		renderWaypoints(graphics, view);
 		if (player != null) {
 			renderPlayer(graphics, view, player, partialTick);
@@ -371,7 +475,11 @@ public final class WorldMapScreen extends Screen {
 
 		if (panel != Panel.NONE) {
 			graphics.nextStratum();
-			sidebar.render(graphics, font, mouseX, mouseY);
+			if (panel == Panel.WAYPOINTS) {
+				sidebar.render(graphics, font, mouseX, mouseY);
+			} else {
+				layersPanel.render(graphics, font, mouseX, mouseY);
+			}
 		}
 		if (popup != null) {
 			graphics.nextStratum();
@@ -390,6 +498,49 @@ public final class WorldMapScreen extends Screen {
 		pose.popMatrix();
 	}
 
+	private void renderTerritoryLabels(GuiGraphics graphics, MapView view) {
+		if (zoom < 0.25) {
+			return;
+		}
+		for (Territories.Territory territory : WynnavClient.territories().territories()) {
+			float x0 = view.screenX(territory.minX(), territory.minZ());
+			float x1 = view.screenX(territory.maxX() + 1, territory.minZ());
+			float y0 = view.screenY(territory.minX(), territory.minZ());
+			float y1 = view.screenY(territory.minX(), territory.maxZ() + 1);
+			if (x1 < 0 || x0 > width || y1 < 0 || y0 > height || font.width(territory.name()) + 6 > x1 - x0 || y1 - y0 < 12) {
+				continue;
+			}
+			float cx = (x0 + x1) / 2;
+			float cy = (y0 + y1) / 2;
+			label(graphics, territory.name(), cx, cy - 4, 0xFFFFFFFF);
+			if (territory.guildPrefix() != null && y1 - y0 >= 24) {
+				label(graphics, "[" + territory.guildPrefix() + "]", cx, cy + 6, territory.color());
+			}
+		}
+	}
+
+	private void renderGathering(GuiGraphics graphics, MapView view, Settings.MapLayers layers) {
+		int size = zoom >= 1.5 ? 4 : 3;
+		int half = size / 2;
+		var pose = graphics.pose();
+		double[] b = view.worldBounds(-size, -size, width + size, height + size);
+		WynnavClient.gathering().forEachIn(b[0], b[1], b[2], b[3], node -> {
+			if (!gatheringVisible(node, layers)) {
+				return;
+			}
+			float sx = view.screenX(node.x() + 0.5, node.z() + 0.5);
+			float sy = view.screenY(node.x() + 0.5, node.z() + 0.5);
+			if (sx < -size || sy < -size || sx > width + size || sy > height + size) {
+				return;
+			}
+			pose.pushMatrix();
+			pose.translate(sx, sy);
+			graphics.fill(-half - 1, -half - 1, size - half + 1, size - half + 1, 0xC0000000);
+			graphics.fill(-half, -half, size - half, size - half, node.profession().color);
+			pose.popMatrix();
+		});
+	}
+
 	private void renderMarkers(GuiGraphics graphics, MapView view) {
 		for (MapMarkers.Marker marker : WynnavClient.markers().markers()) {
 			if (!marker.visibleAt(zoom)) {
@@ -406,6 +557,34 @@ public final class WorldMapScreen extends Screen {
 			} else {
 				Icons.draw(graphics, WAYPOINT_ICON, sx, sy, 4, 16, 0xFFFFFFFF, 0);
 			}
+		}
+	}
+
+	private void renderContent(GuiGraphics graphics, MapView view, Settings.MapLayers layers) {
+		if (layers.camps) {
+			for (Content.Info camp : WynnavClient.content().camps()) {
+				drawContentIcon(graphics, view, camp, CAMP_ICON, 0xFFFFB74D);
+			}
+		}
+		if (layers.worldEvents) {
+			for (Content.Info event : WynnavClient.content().worldEvents()) {
+				drawContentIcon(graphics, view, event, EVENT_ICON, event.nextStart() != null ? 0xFFFF5252 : 0xFFFF8A80);
+			}
+		}
+	}
+
+	private void drawContentIcon(GuiGraphics graphics, MapView view, Content.Info info, Identifier icon, int color) {
+		if (info.x() == null) {
+			return;
+		}
+		float sx = view.screenX(info.x() + 0.5, info.z() + 0.5);
+		float sy = view.screenY(info.x() + 0.5, info.z() + 0.5);
+		if (sx < -ICON_SIZE || sy < -ICON_SIZE || sx > width + ICON_SIZE || sy > height + ICON_SIZE) {
+			return;
+		}
+		Icons.draw(graphics, icon, sx, sy, 12, 32, color, 0);
+		if (zoom >= 0.6) {
+			label(graphics, info.name(), sx, sy + 8, 0xFFFFFFFF);
 		}
 	}
 

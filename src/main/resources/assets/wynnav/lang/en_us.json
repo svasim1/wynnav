@@ -8,5 +8,7 @@
 	"wynnav.waypoint.new": "New waypoint",
 	"wynnav.waypoint.edit": "Edit waypoint",
 	"wynnav.waypoint.save": "Save",
+	"wynnav.map.layers": "Layers",
+	"wynnav.map.settings": "Settings",
 	"wynnav.settings": "Wynnav Settings"
 }
