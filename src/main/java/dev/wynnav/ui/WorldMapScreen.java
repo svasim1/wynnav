@@ -88,6 +88,7 @@ public final class WorldMapScreen extends Screen {
 	private final WaypointSidebar sidebar = new WaypointSidebar(this);
 	private final LayersPanel layersPanel = new LayersPanel();
 	private Panel panel = lastPanel;
+	private SearchBox search;
 	private Button recenterButton;
 
 	public WorldMapScreen() {
@@ -114,6 +115,11 @@ public final class WorldMapScreen extends Screen {
 		right -= 54;
 		addRenderableWidget(Button.builder(Component.translatable("wynnav.map.settings"), button -> minecraft.setScreen(new SettingsScreen(this)))
 			.bounds(right - 56, top, 56, 20).build());
+		right -= 60;
+
+		String previousQuery = search == null ? "" : search.query();
+		search = new SearchBox(this, font, 6, top, Math.max(80, Math.min(180, right - 12)), previousQuery);
+		addRenderableWidget(search.box());
 
 		sidebar.layout(width - WaypointSidebar.WIDTH, TOP_BAR, height - 22);
 		layersPanel.layout(width - LayersPanel.WIDTH, TOP_BAR, height - 22);
@@ -139,6 +145,16 @@ public final class WorldMapScreen extends Screen {
 		following = false;
 		centerX = worldX;
 		centerZ = worldZ;
+	}
+
+	/** Centers on a point, zooming in if needed so markers there are visible. */
+	void jumpTo(double worldX, double worldZ, @Nullable PopupMenu menu) {
+		focusOn(worldX, worldZ);
+		zoom = Math.max(zoom, 1);
+		lastZoom = zoom;
+		if (menu != null) {
+			openPopup(menu, width / 2 + 4, height / 2 + 4);
+		}
 	}
 
 	private void togglePanel(Panel target) {
@@ -321,9 +337,13 @@ public final class WorldMapScreen extends Screen {
 				return true; // A click outside just dismisses the menu.
 			}
 		}
+		if (search.mouseClickedResults(mx, my)) {
+			return true;
+		}
 		if (super.mouseClicked(event, isDoubleClick)) {
 			return true;
 		}
+		setFocused(null);
 		if (overPanel(mx, my)) {
 			return panel == Panel.WAYPOINTS ? sidebar.mouseClicked(mx, my, event.button()) : layersPanel.mouseClicked(mx, my);
 		}
@@ -407,11 +427,29 @@ public final class WorldMapScreen extends Screen {
 		return true;
 	}
 
+	private boolean typing() {
+		return getFocused() == search.box();
+	}
+
 	@Override
 	public boolean keyPressed(KeyEvent event) {
 		if (event.isEscape() && popup != null) {
 			popup = null;
 			return true;
+		}
+		if (typing()) {
+			if (event.isEscape()) {
+				search.clear();
+				setFocused(null);
+				return true;
+			}
+			if (event.key() == GLFW.GLFW_KEY_ENTER || event.key() == GLFW.GLFW_KEY_KP_ENTER) {
+				search.openFirst();
+				setFocused(null);
+				return true;
+			}
+			// Typing in the search box must not trigger map hotkeys.
+			return super.keyPressed(event);
 		}
 		if (WynnavClient.openMapKey().matches(event)) {
 			onClose();
@@ -457,7 +495,7 @@ public final class WorldMapScreen extends Screen {
 			renderGathering(graphics, view, layers);
 		}
 
-		boolean interactive = popup == null && !dragging && !overPanel(mouseX, mouseY) && mouseY > TOP_BAR;
+		boolean interactive = popup == null && !dragging && !overPanel(mouseX, mouseY) && mouseY > TOP_BAR && !search.isOverResults(mouseX, mouseY);
 		Hover hover = interactive ? hoverAt(mouseX, mouseY) : null;
 		renderMarkers(graphics, view);
 		renderContent(graphics, view, layers);
@@ -481,6 +519,8 @@ public final class WorldMapScreen extends Screen {
 				layersPanel.render(graphics, font, mouseX, mouseY);
 			}
 		}
+		graphics.nextStratum();
+		search.renderResults(graphics, mouseX, mouseY);
 		if (popup != null) {
 			graphics.nextStratum();
 			popup.render(graphics, font, mouseX, mouseY);
