@@ -2,6 +2,8 @@ package dev.wynnav.ui;
 
 import dev.wynnav.WynnavClient;
 import dev.wynnav.waypoint.Waypoint;
+import dev.wynnav.waypoint.WynntilsImport;
+import net.minecraft.util.Util;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -17,7 +19,7 @@ import org.lwjgl.glfw.GLFW;
 final class WaypointSidebar {
 	static final int WIDTH = 160;
 	private static final int ROW_HEIGHT = 22;
-	private static final int HEADER_HEIGHT = 34;
+	private static final int HEADER_HEIGHT = 48;
 	private static final int BACKGROUND = 0xD0101418;
 	private static final int BORDER = 0xFF3A4450;
 
@@ -26,6 +28,8 @@ final class WaypointSidebar {
 	private int top;
 	private int bottom;
 	private int scroll;
+	private String status = "";
+	private long statusUntil;
 
 	WaypointSidebar(WorldMapScreen screen) {
 		this.screen = screen;
@@ -51,6 +55,10 @@ final class WaypointSidebar {
 			addAtPlayer();
 			return true;
 		}
+		if (isOverImportButton(mouseX, mouseY) && button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+			importFromWynntils();
+			return true;
+		}
 		List<Waypoint> list = WynnavClient.waypoints().all();
 		int index = rowAt(mouseY);
 		if (index >= 0 && index < list.size()) {
@@ -72,6 +80,24 @@ final class WaypointSidebar {
 		screen.openEditor(null, draft);
 	}
 
+	/** Wynntils' waypoint manager has an Export button that copies its waypoints to the clipboard. */
+	private void importFromWynntils() {
+		String clipboard = Minecraft.getInstance().keyboardHandler.getClipboard();
+		WynntilsImport.Result result = WynntilsImport.fromText(clipboard, WynnavClient.waypoints());
+		if (!result.valid()) {
+			showStatus("Copy with Wynntils' Export first");
+		} else if (result.imported() == 0) {
+			showStatus("Nothing new (" + result.skipped() + " already here)");
+		} else {
+			showStatus("Imported " + result.imported() + " waypoints");
+		}
+	}
+
+	private void showStatus(String text) {
+		status = text;
+		statusUntil = Util.getMillis() + 4000;
+	}
+
 	void render(GuiGraphics graphics, Font font, int mouseX, int mouseY) {
 		graphics.fill(x, top, x + WIDTH, bottom, BACKGROUND);
 		graphics.vLine(x, top - 1, bottom, BORDER);
@@ -80,6 +106,10 @@ final class WaypointSidebar {
 		boolean addHovered = isOverAddButton(mouseX, mouseY);
 		graphics.fill(x + 6, top + 17, x + WIDTH - 6, top + 30, addHovered ? 0xFF2E5E3A : 0xFF24402C);
 		graphics.drawCenteredString(font, "+ Add at my position", x + WIDTH / 2, top + 20, 0xFFFFFFFF);
+		boolean importHovered = isOverImportButton(mouseX, mouseY);
+		graphics.fill(x + 6, top + 32, x + WIDTH - 6, top + 45, importHovered ? 0xFF3A4A5E : 0xFF2A3644);
+		String importLabel = Util.getMillis() < statusUntil ? status : "Paste Wynntils export";
+		graphics.drawCenteredString(font, font.plainSubstrByWidth(importLabel, WIDTH - 14), x + WIDTH / 2, top + 35, 0xFFFFFFFF);
 
 		List<Waypoint> list = WynnavClient.waypoints().all();
 		int listTop = top + HEADER_HEIGHT;
@@ -114,6 +144,10 @@ final class WaypointSidebar {
 
 	private boolean isOverAddButton(double mouseX, double mouseY) {
 		return mouseX >= x + 6 && mouseX < x + WIDTH - 6 && mouseY >= top + 17 && mouseY < top + 30;
+	}
+
+	private boolean isOverImportButton(double mouseX, double mouseY) {
+		return mouseX >= x + 6 && mouseX < x + WIDTH - 6 && mouseY >= top + 32 && mouseY < top + 45;
 	}
 
 	private int rowAt(double mouseY) {
