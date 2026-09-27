@@ -61,9 +61,9 @@ public final class WorldMapScreen extends Screen {
 	private static Panel lastPanel = Panel.NONE;
 
 	/**
-	 * Something under the cursor: what to call it, what to offer when it is clicked, and what
-	 * tracking it means. Areas (territories) cover the whole map, so right-clicking one still means
-	 * "this spot".
+	 * Something under the cursor: what to call it, what to offer when it is clicked, and what a
+	 * middle-click tracks. Areas (territories) cover the whole map, so right- or middle-clicking one
+	 * still means "this spot".
 	 */
 	private record Hover(String label, Supplier<PopupMenu> menu, @Nullable Supplier<Waypoint> target) {
 		boolean area() {
@@ -90,6 +90,7 @@ public final class WorldMapScreen extends Screen {
 	private Panel panel = lastPanel;
 	private SearchBox search;
 	private Button recenterButton;
+	private final MovementPassthrough movement = new MovementPassthrough();
 
 	public WorldMapScreen() {
 		super(Component.translatable("wynnav.screen.map"));
@@ -357,6 +358,10 @@ public final class WorldMapScreen extends Screen {
 			pressCenterZ = centerZ;
 			return true;
 		}
+		if (event.button() == GLFW.GLFW_MOUSE_BUTTON_MIDDLE) {
+			trackAt(mx, my);
+			return true;
+		}
 		if (event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
 			Hover hover = hoverAt(mx, my);
 			PopupMenu menu = hover != null && !hover.area()
@@ -366,6 +371,22 @@ public final class WorldMapScreen extends Screen {
 			return true;
 		}
 		return false;
+	}
+
+	/** Middle-click: track whatever is under the cursor, or the spot itself. Again to stop. */
+	private void trackAt(double mouseX, double mouseY) {
+		Hover hover = hoverAt(mouseX, mouseY);
+		Waypoint target;
+		if (hover != null && !hover.area()) {
+			target = hover.target().get();
+		} else {
+			int x = Mth.floor(view().worldX(mouseX, mouseY));
+			int z = Mth.floor(view().worldZ(mouseX, mouseY));
+			target = pointTarget("Map location", x, null, z);
+		}
+		Waypoint current = waypoints.tracked().orElse(null);
+		boolean sameSpot = current != null && current.x() == target.x() && current.z() == target.z();
+		waypoints.track(sameSpot ? null : target);
 	}
 
 	@Override
@@ -432,9 +453,28 @@ public final class WorldMapScreen extends Screen {
 	}
 
 	@Override
+	public void tick() {
+		movement.update(!typing());
+	}
+
+	@Override
+	public boolean keyReleased(KeyEvent event) {
+		if (!typing() && movement.isMovementKey(event)) {
+			return true;
+		}
+		return super.keyReleased(event);
+	}
+
+	@Override
 	public boolean keyPressed(KeyEvent event) {
 		if (event.isEscape() && popup != null) {
 			popup = null;
+			return true;
+		}
+		// Movement keys walk the player (see MovementPassthrough); they must not also press a
+		// focused button, e.g. Space re-clicking "Layers".
+		if (!typing() && movement.isMovementKey(event)) {
+			movement.update(true);
 			return true;
 		}
 		if (typing()) {
@@ -467,6 +507,8 @@ public final class WorldMapScreen extends Screen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+		// Also per frame, so key presses shorter than a tick still register.
+		movement.update(!typing());
 		LocalPlayer player = Minecraft.getInstance().player;
 		if (following && player != null) {
 			Vec3 pos = player.getPosition(partialTick);
