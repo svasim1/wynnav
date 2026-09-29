@@ -47,6 +47,7 @@ public final class Settings {
 
 	public static final class MapLayers {
 		public Set<MapMarkers.Category> hiddenCategories = EnumSet.noneOf(MapMarkers.Category.class);
+		public boolean placeNames = true;
 		public boolean territories = false;
 		public boolean gathering = false;
 		public Set<Gathering.Profession> gatheringProfessions = EnumSet.allOf(Gathering.Profession.class);

@@ -50,6 +50,7 @@ final class LayersPanel {
 				() -> toggle(layers.hiddenCategories, category)));
 		}
 		rows.add(Row.header("Overlays"));
+		rows.add(Row.check("Place names", () -> layers.placeNames, () -> layers.placeNames = !layers.placeNames));
 		rows.add(Row.check("Guild territories", () -> layers.territories, () -> layers.territories = !layers.territories));
 		rows.add(Row.check("Camps", () -> layers.camps, () -> layers.camps = !layers.camps));
 		rows.add(Row.check("World events", () -> layers.worldEvents, () -> layers.worldEvents = !layers.worldEvents));

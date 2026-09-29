@@ -6,6 +6,7 @@ import dev.wynnav.config.Settings;
 import dev.wynnav.map.Content;
 import dev.wynnav.map.Gathering;
 import dev.wynnav.map.MapMarkers;
+import dev.wynnav.map.Places;
 import dev.wynnav.map.Territories;
 import dev.wynnav.render.Icons;
 import dev.wynnav.render.MapPainter;
@@ -13,7 +14,9 @@ import dev.wynnav.render.MapView;
 import dev.wynnav.render.Polygons;
 import dev.wynnav.waypoint.Waypoint;
 import dev.wynnav.waypoint.Waypoints;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -541,6 +544,9 @@ public final class WorldMapScreen extends Screen {
 		Hover hover = interactive ? hoverAt(mouseX, mouseY) : null;
 		renderMarkers(graphics, view);
 		renderContent(graphics, view, layers);
+		if (layers.placeNames) {
+			renderPlaceNames(graphics, view);
+		}
 		renderWaypoints(graphics, view);
 		if (player != null) {
 			renderPlayer(graphics, view, player, partialTick);
@@ -580,10 +586,36 @@ public final class WorldMapScreen extends Screen {
 		pose.popMatrix();
 	}
 
+	// Which territories contain a place label; recomputed only when either data set is reloaded.
+	private List<Territories.Territory> namedTerritoriesFor = List.of();
+	private List<Places.Place> namedPlacesFor = List.of();
+	private Set<Territories.Territory> namedByPlace = Set.of();
+
+	private Set<Territories.Territory> territoriesNamedByPlaces() {
+		List<Territories.Territory> territories = WynnavClient.territories().territories();
+		List<Places.Place> places = WynnavClient.places().places();
+		if (territories != namedTerritoriesFor || places != namedPlacesFor) {
+			Set<Territories.Territory> named = new HashSet<>();
+			for (Territories.Territory territory : territories) {
+				for (Places.Place place : places) {
+					if (territory.contains(place.x(), place.z())) {
+						named.add(territory);
+						break;
+					}
+				}
+			}
+			namedByPlace = named;
+			namedTerritoriesFor = territories;
+			namedPlacesFor = places;
+		}
+		return namedByPlace;
+	}
+
 	private void renderTerritoryLabels(GuiGraphics graphics, MapView view) {
 		if (zoom < 0.25) {
 			return;
 		}
+		Set<Territories.Territory> named = Settings.get().layers.placeNames ? territoriesNamedByPlaces() : Set.of();
 		for (Territories.Territory territory : WynnavClient.territories().territories()) {
 			float x0 = view.screenX(territory.minX(), territory.minZ());
 			float x1 = view.screenX(territory.maxX() + 1, territory.minZ());
@@ -594,10 +626,67 @@ public final class WorldMapScreen extends Screen {
 			}
 			float cx = (x0 + x1) / 2;
 			float cy = (y0 + y1) / 2;
+			// Where a place label already names this area, show only the guild tag.
+			if (named.contains(territory)) {
+				if (territory.guildPrefix() != null) {
+					label(graphics, "[" + territory.guildPrefix() + "]", cx, y0 + 4, territory.color());
+				}
+				continue;
+			}
 			label(graphics, territory.name(), cx, cy - 4, 0xFFFFFFFF);
 			if (territory.guildPrefix() != null && y1 - y0 >= 24) {
 				label(graphics, "[" + territory.guildPrefix() + "]", cx, cy + 6, territory.color());
 			}
+		}
+	}
+
+	/**
+	 * Province names when zoomed far out, town names at almost every zoom, smaller places once
+	 * zoomed in; levels appear when there is room.
+	 */
+	private void renderPlaceNames(GuiGraphics graphics, MapView view) {
+		for (Places.Place place : WynnavClient.places().places()) {
+			float scale;
+			int color;
+			boolean showLevel;
+			switch (place.kind()) {
+				case PROVINCE -> {
+					if (zoom >= 0.35) {
+						continue;
+					}
+					scale = 2;
+					color = 0xFFFFE066;
+					showLevel = false;
+				}
+				case TOWN -> {
+					scale = zoom >= 0.5 ? 1.25f : 1;
+					color = 0xFFFFFFFF;
+					showLevel = zoom >= 0.5;
+				}
+				default -> {
+					if (zoom < 0.3) {
+						continue;
+					}
+					scale = 1;
+					color = 0xFFD8DEE4;
+					showLevel = zoom >= 0.9;
+				}
+			}
+			float sx = view.screenX(place.x() + 0.5, place.z() + 0.5);
+			float sy = view.screenY(place.x() + 0.5, place.z() + 0.5);
+			int halfWidth = (int) (font.width(place.name()) * scale / 2);
+			if (sx + halfWidth < 0 || sx - halfWidth > width || sy < -20 || sy > height + 20) {
+				continue;
+			}
+			var pose = graphics.pose();
+			pose.pushMatrix();
+			pose.translate(sx, sy);
+			pose.scale(scale);
+			graphics.drawCenteredString(font, place.name(), 0, -4, color);
+			if (showLevel && place.level() != null) {
+				graphics.drawCenteredString(font, "Lv. " + place.level(), 0, 6, 0xFFB0B8C0);
+			}
+			pose.popMatrix();
 		}
 	}
 

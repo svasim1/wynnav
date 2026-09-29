@@ -3,6 +3,7 @@ package dev.wynnav.ui;
 import dev.wynnav.WynnavClient;
 import dev.wynnav.map.Content;
 import dev.wynnav.map.MapMarkers;
+import dev.wynnav.map.Places;
 import dev.wynnav.map.Territories;
 import dev.wynnav.waypoint.Waypoint;
 import java.util.ArrayList;
@@ -23,7 +24,7 @@ final class SearchBox {
 	private static final int MAX_RESULTS = 8;
 	private static final int ROW = 12;
 
-	/** {@code source} breaks ties between equally good matches: waypoints, markers, ... */
+	/** {@code source} breaks ties between equally good matches: places, waypoints, markers, ... */
 	private record Result(String name, String kind, double x, double z, Supplier<PopupMenu> menu, int rank, int source) {}
 
 	private final WorldMapScreen screen;
@@ -61,6 +62,16 @@ final class SearchBox {
 			return;
 		}
 		List<Result> found = new ArrayList<>();
+		for (Places.Place place : WynnavClient.places().places()) {
+			String kind = switch (place.kind()) {
+				case PROVINCE -> "Province";
+				case TOWN -> "Town";
+				case PLACE -> "Place";
+			};
+			List<String> details = place.level() != null ? List.of("Lv. " + place.level()) : List.of();
+			add(found, 0, q, place.name(), kind, place.x(), place.z(),
+				() -> screen.pointMenu(place.name(), details, place.x(), null, place.z()));
+		}
 		for (Waypoint waypoint : WynnavClient.waypoints().all()) {
 			add(found, 1, q, waypoint.name(), "Waypoint", waypoint.x(), waypoint.z(), () -> screen.waypointMenu(waypoint));
 		}
@@ -83,7 +94,7 @@ final class SearchBox {
 		}
 		// Many markers share a name ("Blacksmith"); prefer exact and prefix matches, then the closest.
 		var player = net.minecraft.client.Minecraft.getInstance().player;
-		// Equally good matches: waypoints before markers, content and territories; then nearest.
+		// Equally good matches: places before waypoints, markers, content and territories; then nearest.
 		Comparator<Result> order = Comparator.comparingInt(Result::rank).thenComparingInt(Result::source);
 		if (player != null) {
 			order = order.thenComparingDouble(r -> Math.hypot(r.x() - player.getX(), r.z() - player.getZ()));

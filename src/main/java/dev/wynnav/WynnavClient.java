@@ -8,6 +8,7 @@ import dev.wynnav.map.Gathering;
 import dev.wynnav.map.MapMarkers;
 import dev.wynnav.map.MapTiles;
 import dev.wynnav.map.MarkerIcons;
+import dev.wynnav.map.Places;
 import dev.wynnav.map.Territories;
 import dev.wynnav.ui.WorldMapScreen;
 import dev.wynnav.waypoint.DeathPoint;
@@ -28,6 +29,7 @@ public class WynnavClient implements ClientModInitializer {
 	private static final Territories TERRITORIES = new Territories();
 	private static final Gathering GATHERING = new Gathering();
 	private static final Content CONTENT = new Content();
+	private static final Places PLACES = new Places();
 	private static final Waypoints WAYPOINTS = new Waypoints();
 	// Territories and world event schedules change while playing.
 	private static final int REFRESH_TICKS = 20 * 60 * 5;
@@ -57,6 +59,10 @@ public class WynnavClient implements ClientModInitializer {
 		return CONTENT;
 	}
 
+	public static Places places() {
+		return PLACES;
+	}
+
 	public static Waypoints waypoints() {
 		return WAYPOINTS;
 	}
@@ -73,6 +79,7 @@ public class WynnavClient implements ClientModInitializer {
 		TERRITORIES.load();
 		GATHERING.load();
 		CONTENT.load();
+		PLACES.load();
 
 		KeyMapping.Category category = KeyMapping.Category.register(Wynnav.id("keys"));
 		openMapKey = KeyBindingHelper.registerKeyBinding(
