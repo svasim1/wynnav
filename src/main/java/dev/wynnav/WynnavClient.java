@@ -97,6 +97,9 @@ public class WynnavClient implements ClientModInitializer {
 			worldMarker.tick(client);
 			deathPoint.tick(client);
 			ticks[0]++;
+			if (ticks[0] % (20 * 20) == 0) {
+				TILES.unloadIdleTiles();
+			}
 			if (ticks[0] % REFRESH_TICKS == 0) {
 				TERRITORIES.load();
 				CONTENT.load();

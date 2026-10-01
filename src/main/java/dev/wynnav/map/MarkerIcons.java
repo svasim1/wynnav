@@ -8,6 +8,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.Util;
 import org.jspecify.annotations.Nullable;
 
 /** Marker icons, downloaded on first use from the official web map. */
@@ -33,7 +34,7 @@ public final class MarkerIcons {
 		}
 		Identifier id = Wynnav.id("icons/" + icon.toLowerCase(Locale.ROOT));
 		CachedFetcher.fetchWithMaxAge(URI.create(ICON_BASE_URL + icon), Wynnav.cacheDir().resolve("icons/" + icon), MAX_AGE)
-			.thenCompose(bytes -> Textures.register(id, bytes))
+			.thenComposeAsync(bytes -> Textures.register(id, bytes), Util.backgroundExecutor())
 			.thenAccept(texture -> loaded.put(icon, texture))
 			.exceptionally(error -> {
 				Wynnav.LOGGER.warn("Could not load marker icon {}", icon, error);
