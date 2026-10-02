@@ -46,7 +46,7 @@ public final class Minimap {
 		boolean left = settings.corner == Settings.Corner.TOP_LEFT || settings.corner == Settings.Corner.BOTTOM_LEFT;
 		boolean top = settings.corner == Settings.Corner.TOP_LEFT || settings.corner == Settings.Corner.TOP_RIGHT;
 		int textLines = (settings.showCoordinates ? 1 : 0) + 1;
-		int textHeight = textLines * 10 + 2;
+		int textHeight = textLines * 10 + 7;
 		int x0 = left ? MARGIN : graphics.guiWidth() - MARGIN - size;
 		int y0 = top ? MARGIN : graphics.guiHeight() - MARGIN - size - textHeight;
 		float cx = x0 + size / 2f;
@@ -86,13 +86,14 @@ public final class Minimap {
 		waypoints.tracked().ifPresent(target -> drawWaypoint(graphics, view, clip, round, cx, cy, radius, target, true));
 
 		drawPlayer(graphics, cx, cy, rotating ? 0 : yaw + 180);
-		drawNorth(graphics, minecraft.font, view, round, cx, cy, radius);
-
 		Polygons.outline(graphics, clip, 2, ARGB.color(alpha, 0x101418));
 		Polygons.outline(graphics, clip, 1, ARGB.color(alpha, 0x5A6878));
+		// The letters sit on the border, so they get their own layer on top of it.
+		graphics.nextStratum();
+		drawCompass(graphics, minecraft.font, view, round, cx, cy, radius);
 
 		Font font = minecraft.font;
-		int textY = y0 + size + 3;
+		int textY = y0 + size + 8; // clear of the S compass tile on the bottom edge
 		if (settings.showCoordinates) {
 			String coords = player.getBlockX() + ", " + player.getBlockY() + ", " + player.getBlockZ();
 			graphics.drawCenteredString(font, coords, (int) cx, textY, 0xFFE0E0E0);
@@ -138,16 +139,38 @@ public final class Minimap {
 		Icons.draw(graphics, PLAYER_ARROW, cx, cy, 10, 32, 0xFFFFFFFF, (float) Math.toRadians(degrees));
 	}
 
-	private static void drawNorth(GuiGraphics graphics, Font font, MapView view, boolean round, float cx, float cy, float radius) {
-		// Direction of north (-Z) on screen, pushed out to the border.
-		float dx = view.screenX(view.centerX(), view.centerZ() - 1000) - cx;
-		float dy = view.screenY(view.centerX(), view.centerZ() - 1000) - cy;
-		float scale = round ? radius / (float) Math.hypot(dx, dy) : radius / Math.max(Math.abs(dx), Math.abs(dy));
+	private record Cardinal(String letter, int dx, int dz, int color) {}
+
+	private static final Cardinal[] CARDINALS = {
+		new Cardinal("N", 0, -1, 0xFFFF6B6B),
+		new Cardinal("E", 1, 0, 0xFFFFFFFF),
+		new Cardinal("S", 0, 1, 0xFFFFFFFF),
+		new Cardinal("W", -1, 0, 0xFFFFFFFF),
+	};
+
+	/**
+	 * Unit vector on screen for a world direction (+X east, +Z south), so the compass letters
+	 * follow the map when it rotates.
+	 */
+	public static float[] screenDirection(MapView view, int worldDx, int worldDz) {
+		float dx = view.screenX(view.centerX() + worldDx, view.centerZ() + worldDz) - view.screenX(view.centerX(), view.centerZ());
+		float dy = view.screenY(view.centerX() + worldDx, view.centerZ() + worldDz) - view.screenY(view.centerX(), view.centerZ());
+		float length = (float) Math.hypot(dx, dy);
+		return new float[] {dx / length, dy / length};
+	}
+
+	private static void drawCompass(GuiGraphics graphics, Font font, MapView view, boolean round, float cx, float cy, float radius) {
 		var pose = graphics.pose();
-		pose.pushMatrix();
-		pose.translate(cx + dx * scale, cy + dy * scale);
-		graphics.fill(-5, -5, 5, 5, 0xE0101418);
-		graphics.drawCenteredString(font, "N", 1, -4, 0xFFFF6B6B);
-		pose.popMatrix();
+		for (Cardinal cardinal : CARDINALS) {
+			float[] dir = screenDirection(view, cardinal.dx(), cardinal.dz());
+			// Out to the border: the circle's edge, or the square's edge along that direction.
+			float scale = round ? radius : radius / Math.max(Math.abs(dir[0]), Math.abs(dir[1]));
+			pose.pushMatrix();
+			pose.translate(cx + dir[0] * scale, cy + dir[1] * scale);
+			graphics.fill(-6, -6, 6, 6, 0xFF5A6878);
+			graphics.fill(-5, -5, 5, 5, 0xFF101418);
+			graphics.drawCenteredString(font, cardinal.letter(), 1, -4, cardinal.color());
+			pose.popMatrix();
+		}
 	}
 }
