@@ -5,6 +5,7 @@ import dev.wynnav.map.Content;
 import dev.wynnav.map.MapMarkers;
 import dev.wynnav.map.Places;
 import dev.wynnav.map.Territories;
+import dev.wynnav.social.PlayerHeads;
 import dev.wynnav.waypoint.Waypoint;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -62,6 +63,9 @@ final class SearchBox {
 			return;
 		}
 		List<Result> found = new ArrayList<>();
+		for (PlayerHeads.Placed placed : PlayerHeads.visible(0)) {
+			add(found, 0, q, placed.member().name(), "Player", placed.x(), placed.z(), () -> screen.playerMenu(placed));
+		}
 		for (Places.Place place : WynnavClient.places().places()) {
 			String kind = switch (place.kind()) {
 				case PROVINCE -> "Province";

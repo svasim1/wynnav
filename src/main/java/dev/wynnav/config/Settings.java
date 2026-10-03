@@ -55,6 +55,9 @@ public final class Settings {
 		public int gatheringMaxLevel = 120;
 		public boolean camps = true;
 		public boolean worldEvents = true;
+		public boolean friends = true;
+		public boolean party = true;
+		public boolean guild = false;
 	}
 
 	public WorldMarker worldMarker = new WorldMarker();

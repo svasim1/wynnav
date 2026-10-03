@@ -12,6 +12,7 @@ import dev.wynnav.render.Icons;
 import dev.wynnav.render.MapPainter;
 import dev.wynnav.render.MapView;
 import dev.wynnav.render.Polygons;
+import dev.wynnav.social.PlayerHeads;
 import dev.wynnav.waypoint.Waypoint;
 import dev.wynnav.waypoint.Waypoints;
 import java.util.HashSet;
@@ -223,6 +224,22 @@ public final class WorldMapScreen extends Screen {
 		return pointMenu(info.name(), info.describe(), info.x(), info.y(), info.z());
 	}
 
+	private static Waypoint playerTarget(PlayerHeads.Placed placed) {
+		return pointTarget(placed.member().name(), (int) Math.floor(placed.x()), null, (int) Math.floor(placed.z()));
+	}
+
+	/** A friend: who and where; tracking marks where they are right now. */
+	PopupMenu playerMenu(PlayerHeads.Placed placed) {
+		Waypoint target = playerTarget(placed);
+		PopupMenu menu = new PopupMenu(placed.member().name()).detail(placed.label().substring(placed.member().name().length()).strip());
+		if (!placed.sameWorld() && placed.member().server() != null) {
+			menu.detail("On another world");
+		}
+		return menu.detail(target.coordinates())
+			.action("Track current position", () -> waypoints.track(target))
+			.action("Copy coordinates", () -> copy(target.coordinates()));
+	}
+
 	PopupMenu territoryMenu(Territories.Territory territory) {
 		PopupMenu menu = new PopupMenu(territory.name());
 		if (territory.guild() != null) {
@@ -257,6 +274,11 @@ public final class WorldMapScreen extends Screen {
 
 	private @Nullable Hover hoverAt(double mouseX, double mouseY) {
 		MapView view = view();
+		for (PlayerHeads.Placed placed : PlayerHeads.visible(Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false))) {
+			if (near(view, placed.x(), placed.z(), mouseX, mouseY)) {
+				return new Hover(placed.label(), () -> playerMenu(placed), () -> playerTarget(placed));
+			}
+		}
 		for (Waypoint waypoint : waypoints.all()) {
 			if (near(view, waypoint.x() + 0.5, waypoint.z() + 0.5, mouseX, mouseY)) {
 				return new Hover(waypoint.name(), () -> waypointMenu(waypoint), () -> waypoint);
@@ -548,6 +570,9 @@ public final class WorldMapScreen extends Screen {
 			renderPlaceNames(graphics, view);
 		}
 		renderWaypoints(graphics, view);
+		for (PlayerHeads.Placed placed : PlayerHeads.visible(partialTick)) {
+			PlayerHeads.draw(graphics, placed, view.screenX(placed.x(), placed.z()), view.screenY(placed.x(), placed.z()), 12);
+		}
 		if (player != null) {
 			renderPlayer(graphics, view, player, partialTick);
 		}

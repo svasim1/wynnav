@@ -55,6 +55,10 @@ final class LayersPanel {
 		rows.add(Row.check("Camps", () -> layers.camps, () -> layers.camps = !layers.camps));
 		rows.add(Row.check("World events", () -> layers.worldEvents, () -> layers.worldEvents = !layers.worldEvents));
 		rows.add(Row.check("Gathering nodes", () -> layers.gathering, () -> layers.gathering = !layers.gathering));
+		rows.add(Row.header("Players"));
+		rows.add(Row.check("Friends", () -> layers.friends, () -> layers.friends = !layers.friends));
+		rows.add(Row.check("Party", () -> layers.party, () -> layers.party = !layers.party));
+		rows.add(Row.check("Guild members", () -> layers.guild, () -> layers.guild = !layers.guild));
 		rows.add(Row.header("Gathering"));
 		for (Gathering.Profession profession : Gathering.Profession.values()) {
 			rows.add(Row.check(profession.displayName(), () -> layers.gatheringProfessions.contains(profession),

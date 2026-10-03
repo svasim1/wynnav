@@ -9,6 +9,7 @@ import dev.wynnav.render.MapPainter;
 import dev.wynnav.render.Icons;
 import dev.wynnav.render.MapView;
 import dev.wynnav.render.Polygons;
+import dev.wynnav.social.PlayerHeads;
 import dev.wynnav.ui.WorldMapScreen;
 import dev.wynnav.waypoint.Waypoint;
 import net.minecraft.client.DeltaTracker;
@@ -73,6 +74,14 @@ public final class Minimap {
 				if (icon != null && insideWithMargin(clip, round, cx, cy, radius, sx, sy)) {
 					Icons.draw(graphics, icon, sx, sy, ICON);
 				}
+			}
+		}
+
+		for (PlayerHeads.Placed placed : PlayerHeads.visible(partialTick)) {
+			float sx = view.screenX(placed.x(), placed.z());
+			float sy = view.screenY(placed.x(), placed.z());
+			if (insideWithMargin(clip, round, cx, cy, radius, sx, sy)) {
+				PlayerHeads.draw(graphics, placed, sx, sy, 8);
 			}
 		}
 

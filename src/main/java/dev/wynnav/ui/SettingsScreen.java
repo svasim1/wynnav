@@ -1,6 +1,8 @@
 package dev.wynnav.ui;
 
+import dev.wynnav.WynnavClient;
 import dev.wynnav.config.Settings;
+import dev.wynnav.social.ApiToken;
 import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.function.DoubleFunction;
@@ -9,9 +11,13 @@ import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import org.jspecify.annotations.Nullable;
 
@@ -25,6 +31,9 @@ public final class SettingsScreen extends Screen {
 	private int[] columnX;
 	private int[] columnY;
 	private final String[] headers = {"World marker", "Minimap", "Minimap view"};
+	private static final java.net.URI TOKEN_PAGE = java.net.URI.create("https://wynncraft.com/account/dashboard?section=dev");
+	private EditBox tokenBox;
+	private int friendsY;
 
 	public SettingsScreen(@Nullable Screen parent) {
 		super(Component.translatable("wynnav.settings"));
@@ -66,9 +75,23 @@ public final class SettingsScreen extends Screen {
 		add(2, slider("Opacity", minimap.opacity, 0.2, 1, SettingsScreen::percent, v -> minimap.opacity = v));
 		add(2, toggle("Markers", minimap.showMarkers, value -> minimap.showMarkers = value));
 
-		addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> onClose())
-			.bounds(width / 2 - 75, Math.max(top + 5 * ROW + 6, height - 28), 150, 20)
+		// Friends: a personal Wynncraft API token lets the API report where friends are.
+		int friendsY = top + 5 * ROW + 14;
+		tokenBox = new EditBox(font, columnX[0], friendsY + 12, columnWidth * 2 + 10, 20, Component.literal("API token"));
+		tokenBox.setMaxLength(200);
+		tokenBox.setValue(ApiToken.get());
+		tokenBox.setHint(Component.literal("Paste your Wynncraft API token"));
+		// Never show the token itself on screen (streams, screenshots).
+		tokenBox.addFormatter((text, start) -> FormattedCharSequence.forward("*".repeat(text.length()), Style.EMPTY));
+		addRenderableWidget(tokenBox);
+		addRenderableWidget(Button.builder(Component.literal("Get a token"), button -> ConfirmLinkScreen.confirmLinkNow(this, TOKEN_PAGE))
+			.bounds(columnX[2], friendsY + 12, columnWidth, 20)
 			.build());
+
+		addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> onClose())
+			.bounds(width / 2 - 75, Math.max(friendsY + 50, height - 28), 150, 20)
+			.build());
+		this.friendsY = friendsY;
 	}
 
 	private void add(int column, AbstractWidget widget) {
@@ -125,11 +148,27 @@ public final class SettingsScreen extends Screen {
 		for (int i = 0; i < headers.length; i++) {
 			graphics.drawString(font, headers[i], columnX[i], 32, 0xFFFFD866);
 		}
+		graphics.drawString(font, "Friends on the map", columnX[0], friendsY, 0xFFFFD866);
+		graphics.drawString(font, friendsStatus(), columnX[0] + font.width("Friends on the map") + 8, friendsY, 0xFFA0A8B0);
+	}
+
+	private String friendsStatus() {
+		return switch (WynnavClient.friends().status()) {
+			case NO_TOKEN -> "Needs your API token";
+			case OK -> WynnavClient.friends().members().size() + " players found";
+			case OFFLINE -> "Token works; join Wynncraft to see friends";
+			case INVALID_TOKEN -> "That token was rejected";
+			case ERROR -> "Could not reach the Wynncraft API";
+		};
 	}
 
 	@Override
 	public void removed() {
 		settings.save();
+		if (!tokenBox.getValue().strip().equals(ApiToken.get())) {
+			ApiToken.set(tokenBox.getValue());
+			WynnavClient.friends().refreshSoon();
+		}
 	}
 
 	@Override

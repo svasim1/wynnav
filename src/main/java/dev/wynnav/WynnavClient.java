@@ -10,6 +10,7 @@ import dev.wynnav.map.MapTiles;
 import dev.wynnav.map.MarkerIcons;
 import dev.wynnav.map.Places;
 import dev.wynnav.map.Territories;
+import dev.wynnav.social.FriendLocations;
 import dev.wynnav.ui.WorldMapScreen;
 import dev.wynnav.waypoint.DeathPoint;
 import dev.wynnav.waypoint.Waypoints;
@@ -31,6 +32,7 @@ public class WynnavClient implements ClientModInitializer {
 	private static final Content CONTENT = new Content();
 	private static final Places PLACES = new Places();
 	private static final Waypoints WAYPOINTS = new Waypoints();
+	private static final FriendLocations FRIENDS = new FriendLocations();
 	// Territories and world event schedules change while playing.
 	private static final int REFRESH_TICKS = 20 * 60 * 5;
 	private static KeyMapping openMapKey;
@@ -61,6 +63,10 @@ public class WynnavClient implements ClientModInitializer {
 
 	public static Places places() {
 		return PLACES;
+	}
+
+	public static FriendLocations friends() {
+		return FRIENDS;
 	}
 
 	public static Waypoints waypoints() {
@@ -95,6 +101,7 @@ public class WynnavClient implements ClientModInitializer {
 				}
 			}
 			worldMarker.tick(client);
+			FRIENDS.tick(client.player != null);
 			deathPoint.tick(client);
 			ticks[0]++;
 			if (ticks[0] % (20 * 20) == 0) {
