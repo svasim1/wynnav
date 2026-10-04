@@ -1,0 +1,13 @@
+{
+	"schemaVersion": 1,
+	"id": "wynnav-gametest",
+	"version": "1.0.0",
+	"name": "Wynnav game tests",
+	"environment": "client",
+	"entrypoints": {
+		"fabric-client-gametest": ["dev.wynnav.gametest.MapScreenGameTest"]
+	},
+	"depends": {
+		"wynnav": "*"
+	}
+}

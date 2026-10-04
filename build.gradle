@@ -50,3 +50,14 @@ java {
 	targetCompatibility = JavaVersion.VERSION_21
 }
 
+// Client game tests drive a real client: `./gradlew runClientGameTest` opens a world and the map,
+// then saves screenshots to build/run/clientGameTest/screenshots.
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = "wynnav-gametest"
+		eula = true
+		enableGameTests = false
+		enableClientGameTests = true
+	}
+}
