@@ -1,51 +1,35 @@
+<p align="center"><img src="docs/logo.png" width="128" alt="Wynnav logo"></p>
+
 # Wynnav
 
-A world map and waypoints for Wynncraft. Fabric, Minecraft 1.21.11, client-only.
+A world map, minimap and waypoints for Wynncraft. Fabric, Minecraft 1.21.11, client-side.
 
-## Data sources
-- **Terrain tiles:** top-down PNGs listed in `https://cdn.wynntils.com/static/Reference/maps.json`
-  (made by the Wynntils team), cached by md5 in `<game dir>/wynnav/cache/tiles`.
-- **Markers:** official Wynncraft API `GET https://api.wynncraft.com/v3/map/locations/markers` (cached 1 h).
-- **Territories:** `GET /v3/guild/list/territory` (refreshed every 5 min).
-- **Gathering nodes:** `GET /v3/map/gathering-nodes` (cached 12 h).
-- **Place names:** labels of the official web map, parsed from `https://map.wynncraft.com/js/labels.js` (cached 3 days).
-- **Camps / raids / world events:** `GET /v3/map/camps`, `/raids`, `/world-events`.
-- **Marker icons:** official web map, `https://map.wynncraft.com/img/<icon>` (cached 7 days).
-- **Player position:** read from the client player.
-- **Waypoints:** `config/wynnav/waypoints.json`.
+## Features
+- **World map** (`M`): drag to pan, scroll to zoom, **Center on me** to follow yourself.
+- **Click anything** for its info and actions; right-click a spot to add a waypoint there;
+  middle-click to track. You keep walking while the map is open.
+- **Waypoints** with a beam and a floating label in the world. A death point is saved automatically.
+- **Minimap**: square or round, north-up or rotating.
+- **Layers**: town and area names, official markers, guild territories, gathering nodes, camps and
+  world events.
+- **Search** for places, markers and waypoints.
+- **Friends** on the map and minimap (needs your Wynncraft API token, see Settings).
+- **Wynntils import**: Export in Wynntils' waypoint manager, then *Paste Wynntils export* here.
 
-## Controls (world map, default key `M`)
-- Left-drag: pan. Scroll: zoom toward the cursor.
-- Left-click a marker or waypoint: its actions (track, add as waypoint, edit, delete, copy coordinates).
-- Right-click anywhere: actions at that spot (add waypoint, track, copy coordinates).
-- Middle-click: track whatever is under the cursor (or the spot itself); middle-click it again to stop.
-- Movement keys keep walking the player while the map is open, except while typing in the search box.
-- **Center on me** button: recenter and follow the player until you drag again.
-- **Waypoints** button: sidebar with all waypoints; click one to jump to it. To bring waypoints over
-  from Wynntils, press Export in Wynntils' waypoint manager, then "Paste Wynntils export" here.
-- **Layers** button: toggle place names, marker categories, guild territories, camps, world events and
-  gathering nodes (by profession and level range).
-- **Search** box: places, markers, camps, world events and waypoints; Enter jumps to the first result.
-- **Settings** button (also in Mod Menu): world marker and minimap options.
+Settings are on the map screen and in Mod Menu.
 
-## In the game
-- **World marker:** tracking something shows a beam and a floating icon with name and distance
-  (visible through walls, pinned to the screen edge when off-screen). Tracking stops on arrival.
-- **Minimap:** square or round, north-up or rotating with your view; size, zoom, opacity and corner
-  are adjustable.
-- **Friends:** heads of your friends (and party / guild members, toggled under Layers) on the map
-  and minimap. Uses the official `GET /v3/map/locations/player` with your personal API token
-  (Settings → "Friends on the map"; create one at wynncraft.com/account/dashboard?section=tokens).
-  The token is stored on its own in `config/wynnav/api-token.txt`. Updates every 15 s; players in
-  render distance follow their live position. Friends on another world are drawn faded.
-- **Death point:** a "Death point" waypoint is kept where you last died.
+## Data
+Terrain tiles come from [Wynntils](https://github.com/Wynntils/Wynntils)' published map; markers,
+territories, gathering nodes, content and friend locations from the
+[Wynncraft API](https://docs.wynncraft.com); place names and icons from the
+[official web map](https://map.wynncraft.com). Everything is cached in `<game dir>/wynnav/cache`.
+Your API token is stored separately in `config/wynnav/api-token.txt` and only sent to Wynncraft.
 
 ## Building
-Loom 1.18 needs Java 25 to run Gradle (the mod itself targets Java 21).
+Gradle needs Java 25 (the mod targets Java 21).
 
 ```sh
-export JAVA_HOME=~/.local/share/jdks/jdk-25.0.4.1+1
-./gradlew build                 # jar in build/libs
-./gradlew runClient             # dev client
-./gradlew runClientGameTest     # scripted client test; screenshots in build/run/clientGameTest/screenshots
+./gradlew build               # jar in build/libs
+./gradlew runClientGameTest   # scripted client test, screenshots in build/run/clientGameTest
+python3 art/pixelart.py       # regenerate the pixel art (sprites are drawn as text grids there)
 ```
