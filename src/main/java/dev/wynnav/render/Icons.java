@@ -19,8 +19,7 @@ public final class Icons {
 	public static final Identifier CAMP = Wynnav.id("textures/gui/camp.png");
 	public static final Identifier EVENT = Wynnav.id("textures/gui/event.png");
 
-	private static final int ARROW_SIZE = 13;
-	private static final int ARROW_FRAMES = 8;
+	private static final int ARROW_TEXTURE = 32;
 	private static final int WAYPOINT_SIZE = 9;
 	private static final int RING_SIZE = 13;
 
@@ -64,11 +63,18 @@ public final class Icons {
 		sprite(graphics, texture, x, y, 0, 0, width, height, width, height, pixelScale(Math.max(width, height), targetGui), color);
 	}
 
-	/** The player arrow, pointing {@code headingDegrees} clockwise from north (eight directions). */
-	public static void playerArrow(GuiGraphics graphics, float x, float y, float headingDegrees, float targetGui) {
-		int frame = Math.floorMod(Math.round(headingDegrees / 45f), ARROW_FRAMES);
-		sprite(graphics, PLAYER_ARROW, x, y, frame * ARROW_SIZE, 0, ARROW_SIZE, ARROW_SIZE, ARROW_SIZE * ARROW_FRAMES, ARROW_SIZE,
-			pixelScale(ARROW_SIZE, targetGui), 0xFFFFFFFF);
+	/**
+	 * The player arrow, pointing {@code headingDegrees} clockwise from north. Unlike the other
+	 * sprites it rotates smoothly, so it is a smooth (not pixel-art) texture drawn at any angle.
+	 */
+	public static void playerArrow(GuiGraphics graphics, float x, float y, float headingDegrees, int size) {
+		var pose = graphics.pose();
+		pose.pushMatrix();
+		pose.translate(x, y);
+		pose.rotate((float) Math.toRadians(headingDegrees));
+		graphics.blit(RenderPipelines.GUI_TEXTURED, PLAYER_ARROW, -size / 2, -size / 2, 0, 0, size, size, ARROW_TEXTURE, ARROW_TEXTURE,
+			ARROW_TEXTURE, ARROW_TEXTURE, 0xFFFFFFFF);
+		pose.popMatrix();
 	}
 
 	/**

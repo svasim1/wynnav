@@ -3,7 +3,6 @@
 Run `python3 art/pixelart.py` to regenerate the textures and logo, or add `--preview` to also write
 enlarged previews to art/preview/.
 """
-import math
 import os
 import struct
 import zlib
@@ -95,61 +94,8 @@ def show(g):
     return "\n".join("".join(r) for r in g)
 
 
-# ---------------------------------------------------------------- player arrow (8 directions)
-
-ARROW_SIZE = 13
-
-# Hand-drawn, pointing north. Lit (white) on its left half, grey on its right.
-ARROW_NORTH = grid("""
-.............
-......K......
-.....KWK.....
-.....KWK.....
-....KWWSK....
-....KWWSK....
-...KWWWSSK...
-...KWWWSSK...
-..KWWWKSSSK..
-..KWWK.KSSK..
-..KWK...KSK..
-..KK.....KK..
-.............
-""")
-
-
-# 45 degrees: interior pixels on the lit (north-west) side of the arrow's axis x + y = 12; the
-# shaded side is their mirror image, so the diagonal arrow is exactly symmetric.
-_ARROW_45_AXIS = [(10, 2), (9, 3), (8, 4), (7, 5), (6, 6)]
-_ARROW_45_LIT = [(8, 3), (6, 4), (7, 4), (5, 5), (6, 5), (3, 6), (4, 6), (5, 6), (1, 7), (2, 7), (3, 7), (4, 7)]
-
-
-def arrow_45():
-    g = [["." for _ in range(13)] for _ in range(13)]
-    for x, y in _ARROW_45_AXIS:
-        g[y][x] = "W"
-    for x, y in _ARROW_45_LIT:
-        g[y][x] = "W"
-        g[12 - x][12 - y] = "S"
-    return outline(g, {"W", "S"})
-
-
-def rot90(g):
-    """Exact 90 degree clockwise rotation of a square grid."""
-    n = len(g)
-    return [[g[n - 1 - x][y] for x in range(n)] for y in range(n)]
-
-
-def arrow_sheet():
-    """Eight directions, clockwise from north: the straight ones are exact rotations of the
-    hand-drawn north arrow, the diagonals of the symmetric 45 degree one."""
-    frames = []
-    for turn in range(4):
-        for f in (ARROW_NORTH, arrow_45()):
-            for _ in range(turn):
-                f = rot90(f)
-            frames.append(f)
-    sheet = [sum((f[y] for f in frames), []) for y in range(ARROW_SIZE)]
-    return frames, sheet
+# The player arrow (textures/gui/player_arrow.png) is not pixel art: it rotates smoothly, so it is a
+# smooth texture that is kept as a file rather than generated here.
 
 
 # ---------------------------------------------------------------- waypoint (tinted body + untinted shading)
@@ -296,8 +242,6 @@ KnNNNNNNNNNNNNNNNNNNNNNNNNNNNNDK
 
 
 def main():
-    frames, sheet = arrow_sheet()
-    png(os.path.join(OUT, "player_arrow.png"), colors(sheet))
     fill, shade, ring = waypoint_textures()
     png(os.path.join(OUT, "waypoint.png"), fill)
     png(os.path.join(OUT, "waypoint_shade.png"), shade)
@@ -311,7 +255,6 @@ def main():
 
     if "--preview" in sys.argv:
         bg = (0x2A, 0x33, 0x3D)
-        png(os.path.join(PREVIEW, "arrow_sheet.png"), colors(sheet), scale=8, background=bg)
         png(os.path.join(PREVIEW, "logo.png"), icon, scale=8, background=bg)
         for name, g in [("recenter", RECENTER), ("camp", CAMP), ("event", EVENT), ("ring", WAYPOINT_RING)]:
             png(os.path.join(PREVIEW, name + ".png"), colors(g), scale=12, background=bg)
