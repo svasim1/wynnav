@@ -3,7 +3,7 @@
 	"id": "wynnav",
 	"version": "${version}",
 	"name": "Wynnav",
-	"description": "A world map and waypoints for Wynncraft.",
+	"description": "A map for Wynncraft",
 	"authors": [
 		"svante"
 	],
