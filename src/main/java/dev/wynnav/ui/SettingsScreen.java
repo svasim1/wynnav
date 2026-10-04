@@ -89,7 +89,7 @@ public final class SettingsScreen extends Screen {
 			.build());
 
 		addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> onClose())
-			.bounds(width / 2 - 75, Math.max(friendsY + 50, height - 28), 150, 20)
+			.bounds(width / 2 - 75, Math.max(friendsY + 50, height - 26), 150, 20)
 			.build());
 		this.friendsY = friendsY;
 	}
@@ -149,7 +149,9 @@ public final class SettingsScreen extends Screen {
 			graphics.drawString(font, headers[i], columnX[i], 32, 0xFFFFD866);
 		}
 		graphics.drawString(font, "Friends on the map", columnX[0], friendsY, 0xFFFFD866);
-		graphics.drawString(font, friendsStatus(), columnX[0] + font.width("Friends on the map") + 8, friendsY, 0xFFA0A8B0);
+		// Under the token field, where even a long status fits on Minecraft's narrowest screens.
+		String status = font.plainSubstrByWidth(friendsStatus(), width - columnX[0] - 8);
+		graphics.drawString(font, status, columnX[0], friendsY + 36, 0xFFA0A8B0);
 	}
 
 	private String friendsStatus() {
@@ -158,6 +160,7 @@ public final class SettingsScreen extends Screen {
 			case OK -> WynnavClient.friends().members().size() + " players found";
 			case OFFLINE -> "Token works; join Wynncraft to see friends";
 			case INVALID_TOKEN -> "That token was rejected";
+			case UNSUPPORTED -> "Wynncraft's API doesn't share friend locations with tokens yet";
 			case ERROR -> "Could not reach the Wynncraft API";
 		};
 	}

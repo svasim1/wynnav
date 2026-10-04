@@ -155,9 +155,14 @@ public final class WorldMarker {
 		int nameWidth = font.width(name);
 		int distWidth = font.width(distance);
 		int boxWidth = Math.max(nameWidth, distWidth) + 6;
-		graphics.fill(-boxWidth / 2, 8, boxWidth / 2, 29, ARGB.color(alpha * 0.55f, 0x000000));
-		graphics.drawString(font, name, -nameWidth / 2, 10, textColor, false);
-		graphics.drawString(font, distance, -distWidth / 2, 20, ARGB.color(alpha, 0xFFD866), false);
+		// A tracked spot without a name (picked on the map) only shows its distance.
+		boolean named = !name.isBlank();
+		int distY = named ? 20 : 10;
+		graphics.fill(-boxWidth / 2, 8, boxWidth / 2, distY + 9, ARGB.color(alpha * 0.55f, 0x000000));
+		if (named) {
+			graphics.drawString(font, name, -nameWidth / 2, 10, textColor, false);
+		}
+		graphics.drawString(font, distance, -distWidth / 2, distY, ARGB.color(alpha, 0xFFD866), false);
 		pose.popMatrix();
 	}
 }

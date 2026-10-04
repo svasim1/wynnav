@@ -28,6 +28,8 @@ import org.jspecify.annotations.Nullable;
 public final class FriendLocations {
 	private static final URI LOCATIONS_URI = URI.create("https://api.wynncraft.com/v3/map/locations/player");
 	private static final long POLL_MS = 15_000;
+	// When Wynncraft refuses token access to this route, check again only now and then.
+	private static final long UNSUPPORTED_POLL_MS = 10 * 60_000;
 	private static final HttpClient CLIENT = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
 
 	public enum Relation {
@@ -37,7 +39,7 @@ public final class FriendLocations {
 
 	public record Member(UUID uuid, String name, @Nullable String server, int x, int y, int z, Relation relation) {}
 
-	public enum Status { NO_TOKEN, OK, OFFLINE, INVALID_TOKEN, ERROR }
+	public enum Status { NO_TOKEN, OK, OFFLINE, INVALID_TOKEN, UNSUPPORTED, ERROR }
 
 	private volatile List<Member> members = List.of();
 	private volatile Status status = ApiToken.isSet() ? Status.OK : Status.NO_TOKEN;
@@ -103,6 +105,12 @@ public final class FriendLocations {
 				}
 				if (code == 200) {
 					parse(response.body());
+				} else if (response.body().contains("CSRF")) {
+					// As of October 2026 the live route only serves the website's own login session
+					// (cookie + CSRF), even though the docs describe token access.
+					status = Status.UNSUPPORTED;
+					members = List.of();
+					nextPoll = Util.getMillis() + UNSUPPORTED_POLL_MS;
 				} else if (code == 401 || (code == 403 && response.body().contains("Token"))) {
 					status = Status.INVALID_TOKEN;
 					members = List.of();

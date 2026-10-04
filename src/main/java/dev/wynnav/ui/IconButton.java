@@ -20,9 +20,14 @@ final class IconButton extends Button {
 	protected void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
 		renderDefaultSprite(graphics);
 		var font = Minecraft.getInstance().font;
-		int contentWidth = 16 + 4 + font.width(getMessage());
-		int left = getX() + (getWidth() - contentWidth) / 2;
 		int iconY = getY() + (getHeight() - 16) / 2;
+		int contentWidth = 16 + 4 + font.width(getMessage());
+		// Too narrow for the label: show only the icon (the caller adds a tooltip).
+		if (getWidth() < contentWidth + 8) {
+			Icons.sprite(graphics, icon, getX() + getWidth() / 2f, iconY + 8, 16, 16, 16, active ? 0xFFFFFFFF : 0xFFA0A0A0);
+			return;
+		}
+		int left = getX() + (getWidth() - contentWidth) / 2;
 		Icons.sprite(graphics, icon, left + 8, iconY + 8, 16, 16, 16, 0xFFFFFFFF);
 		graphics.drawString(font, getMessage(), left + 20, getY() + (getHeight() - 8) / 2, active ? 0xFFFFFFFF : 0xFFA0A0A0);
 	}

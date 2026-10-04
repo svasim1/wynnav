@@ -23,6 +23,7 @@ import java.util.function.Supplier;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -106,9 +107,15 @@ public final class WorldMapScreen extends Screen {
 	protected void init() {
 		int top = 6;
 		int right = width - 6;
-		recenterButton = addRenderableWidget(new IconButton(right - 104, top, 104, 20, RECENTER_ICON,
+		// On narrow screens (down to Minecraft's 320 GUI pixels) "Center on me" shrinks to its icon so
+		// the search box still fits.
+		int recenterWidth = width < 440 ? 24 : 104;
+		recenterButton = addRenderableWidget(new IconButton(right - recenterWidth, top, recenterWidth, 20, RECENTER_ICON,
 			Component.translatable("wynnav.map.recenter"), button -> recenter()));
-		right -= 108;
+		if (recenterWidth < 104) {
+			recenterButton.setTooltip(Tooltip.create(Component.translatable("wynnav.map.recenter")));
+		}
+		right -= recenterWidth + 4;
 		addRenderableWidget(Button.builder(Component.translatable("wynnav.map.waypoints"), button -> togglePanel(Panel.WAYPOINTS))
 			.bounds(right - 66, top, 66, 20).build());
 		right -= 70;
@@ -259,7 +266,7 @@ public final class WorldMapScreen extends Screen {
 		}
 		return menu
 			.action("Add waypoint here...", () -> openEditor(null, draft))
-			.action("Track this spot", () -> waypoints.track(draft.withValues("Map location", worldX, null, worldZ, 0xFFFFFFFF)))
+			.action("Track this spot", () -> waypoints.track(draft.withValues("", worldX, null, worldZ, 0xFFFFFFFF)))
 			.action("Copy coordinates", () -> copy(coords));
 	}
 
@@ -404,7 +411,8 @@ public final class WorldMapScreen extends Screen {
 		} else {
 			int x = Mth.floor(view().worldX(mouseX, mouseY));
 			int z = Mth.floor(view().worldZ(mouseX, mouseY));
-			target = pointTarget("Map location", x, null, z);
+			// A bare spot has no name; the in-world label then shows just the distance.
+			target = pointTarget("", x, null, z);
 		}
 		Waypoint current = waypoints.tracked().orElse(null);
 		boolean sameSpot = current != null && current.x() == target.x() && current.z() == target.z();

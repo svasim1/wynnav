@@ -5,7 +5,10 @@
 	"name": "Wynnav game tests",
 	"environment": "client",
 	"entrypoints": {
-		"fabric-client-gametest": ["dev.wynnav.gametest.MapScreenGameTest"]
+		"fabric-client-gametest": [
+			"dev.wynnav.gametest.MapScreenGameTest",
+			"dev.wynnav.gametest.GuiScaleGameTest"
+		]
 	},
 	"depends": {
 		"wynnav": "*"
