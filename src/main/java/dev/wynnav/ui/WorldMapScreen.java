@@ -676,7 +676,8 @@ public final class WorldMapScreen extends Screen {
 			boolean showLevel;
 			switch (place.kind()) {
 				case PROVINCE -> {
-					if (zoom >= 0.35) {
+					// Only once zoomed out far enough to see most of a province.
+					if (zoom >= 0.2) {
 						continue;
 					}
 					scale = 2;

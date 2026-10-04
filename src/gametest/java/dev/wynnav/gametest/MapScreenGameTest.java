@@ -129,9 +129,12 @@ public class MapScreenGameTest implements FabricClientGameTest {
 
 			// Place names at two zoom levels (the map opens at 1.0x and follows the player).
 			context.getInput().setCursorPos(427, 240);
-			context.getInput().scroll(-8); // ~0.23x: provinces and towns
+			context.getInput().scroll(-11); // ~0.13x: provinces and towns
 			context.waitTicks(3);
 			context.takeScreenshot("map-names-far");
+			context.getInput().scroll(3); // ~0.23x: towns only, provinces hidden
+			context.waitTicks(3);
+			context.takeScreenshot("map-names-mid");
 			context.getInput().scroll(5); // ~0.58x: towns with levels and smaller places
 			context.waitTicks(3);
 			context.takeScreenshot("map-names-near");

@@ -31,7 +31,7 @@ public final class SettingsScreen extends Screen {
 	private int[] columnX;
 	private int[] columnY;
 	private final String[] headers = {"World marker", "Minimap", "Minimap view"};
-	private static final java.net.URI TOKEN_PAGE = java.net.URI.create("https://wynncraft.com/account/dashboard?section=dev");
+	private static final java.net.URI TOKEN_PAGE = java.net.URI.create("https://wynncraft.com/account/dashboard?section=tokens");
 	private EditBox tokenBox;
 	private int friendsY;
 
