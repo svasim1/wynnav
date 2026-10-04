@@ -33,6 +33,7 @@ public class GuiScaleGameTest implements FabricClientGameTest {
 					client.options.guiScale().set(scale);
 					client.resizeDisplay();
 				});
+				context.getInput().setCursorPos(1900, 1060); // keep the mouse off the minimap
 				context.waitTicks(5);
 				context.takeScreenshot("scale-" + name + "-hud");
 

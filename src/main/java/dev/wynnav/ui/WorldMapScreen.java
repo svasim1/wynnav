@@ -671,8 +671,8 @@ public final class WorldMapScreen extends Screen {
 	}
 
 	/**
-	 * Province names when zoomed far out, town names at almost every zoom, smaller places once
-	 * zoomed in; levels appear when there is room.
+	 * Province names when zoomed far out, town names at almost every zoom, smaller areas once
+	 * zoomed in. Areas always show their level; towns from 0.3x.
 	 */
 	private void renderPlaceNames(GuiGraphics graphics, MapView view) {
 		for (Places.Place place : WynnavClient.places().places()) {
@@ -685,22 +685,23 @@ public final class WorldMapScreen extends Screen {
 					if (zoom >= 0.2) {
 						continue;
 					}
-					scale = 2;
+					scale = 1.5f;
 					color = 0xFFFFE066;
 					showLevel = false;
 				}
 				case TOWN -> {
 					scale = zoom >= 0.5 ? 1.25f : 1;
 					color = 0xFFFFFFFF;
-					showLevel = zoom >= 0.5;
+					showLevel = zoom >= 0.3;
 				}
 				default -> {
 					if (zoom < 0.3) {
 						continue;
 					}
+					// Areas always show their level together with their name.
 					scale = 1;
 					color = 0xFFD8DEE4;
-					showLevel = zoom >= 0.9;
+					showLevel = true;
 				}
 			}
 			float sx = view.screenX(place.x() + 0.5, place.z() + 0.5);

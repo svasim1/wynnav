@@ -97,8 +97,26 @@ def show(g):
     return "\n".join("".join(r) for r in g)
 
 
-# The player arrow (textures/gui/player_arrow.png) is not pixel art: it rotates smoothly, so it is a
-# smooth texture that is kept as a file rather than generated here.
+# ---------------------------------------------------------------- player pointer (15x15)
+
+# Pointing north; the game rotates it to any angle. Gold rim and tip, white body lit on the left.
+PLAYER_POINTER = grid("""
+.......K.......
+......KYK......
+......KYK......
+.....KYWyK.....
+.....KYWyK.....
+....KYWWSyK....
+....KYWWSyK....
+...KYWWWSSyK...
+...KYWWWSSyK...
+..KYWWWKSSSyK..
+..KYWWK.KSSyK..
+.KYWWK...KSSyK.
+.KYYK.....KyyK.
+.KKK.......KKK.
+...............
+""")
 
 
 # ---------------------------------------------------------------- waypoint (tinted body + untinted shading)
@@ -207,6 +225,7 @@ KRRYYWYYRRK
 """)
 
 def main():
+    png(os.path.join(OUT, "player_arrow.png"), colors(PLAYER_POINTER))
     fill, shade, ring = waypoint_textures()
     png(os.path.join(OUT, "waypoint.png"), fill)
     png(os.path.join(OUT, "waypoint_shade.png"), shade)
@@ -223,7 +242,7 @@ def main():
     if "--preview" in sys.argv:
         bg = (0x2A, 0x33, 0x3D)
         png(os.path.join(PREVIEW, "icon.png"), icon, scale=8, background=bg)
-        for name, g in [("recenter", RECENTER), ("camp", CAMP), ("event", EVENT), ("ring", WAYPOINT_RING)]:
+        for name, g in [("pointer", PLAYER_POINTER), ("recenter", RECENTER), ("camp", CAMP), ("event", EVENT), ("ring", WAYPOINT_RING)]:
             png(os.path.join(PREVIEW, name + ".png"), colors(g), scale=12, background=bg)
 
 
