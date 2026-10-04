@@ -7,7 +7,12 @@
 	"authors": [
 		"svante"
 	],
-	"license": "All-Rights-Reserved",
+	"contact": {
+		"homepage": "https://github.com/svasim1/wynnav",
+		"sources": "https://github.com/svasim1/wynnav",
+		"issues": "https://github.com/svasim1/wynnav/issues"
+	},
+	"license": "LGPL-3.0-only",
 	"icon": "assets/wynnav/icon.png",
 	"environment": "client",
 	"entrypoints": {

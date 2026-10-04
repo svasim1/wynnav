@@ -40,7 +40,9 @@ public final class MarkerIcons {
 			.thenComposeAsync(bytes -> Textures.register(id, bytes), Util.backgroundExecutor())
 			.thenAccept(texture -> loaded.put(icon, new Icon(texture.id(), texture.width(), texture.height())))
 			.exceptionally(error -> {
-				Wynnav.LOGGER.warn("Could not load marker icon {}", icon, error);
+				// A few markers name icons the web map doesn't have; those are drawn as a dot instead.
+				Throwable cause = error.getCause() != null ? error.getCause() : error;
+				Wynnav.LOGGER.info("Marker icon {} is unavailable ({}), using a dot instead", icon, cause.getMessage());
 				return null;
 			});
 	}

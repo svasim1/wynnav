@@ -50,6 +50,11 @@ java {
 	targetCompatibility = JavaVersion.VERSION_21
 }
 
+// The LGPL text (and the GPL it builds on) go into the jar.
+jar {
+	from("LICENSE", "COPYING")
+}
+
 // Client game tests drive a real client: `./gradlew runClientGameTest` opens a world and the map,
 // then saves screenshots to build/run/clientGameTest/screenshots.
 fabricApi {
