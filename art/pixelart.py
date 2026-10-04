@@ -9,6 +9,9 @@ import zlib
 
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import branding  # noqa: E402
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ASSETS = os.path.join(ROOT, "src", "main", "resources", "assets", "wynnav")
 OUT = os.path.join(ASSETS, "textures", "gui")
@@ -203,44 +206,6 @@ KRRYYWYYRRK
 .....K.....
 """)
 
-# ---------------------------------------------------------------- logo (32x32)
-
-LOGO = grid("""
-..KKKKKKKKKKKKKKKKKKKKKKKKKKKK..
-.KnnnnnnnnnnnnnnnnnnnnnnnnnnnnK.
-KnNNNNNNNNNNNNNNNNNNNNNNNNNNNNDK
-KnNNNNNNNNNNNNNNNNNNNNNNNNNNNNDK
-KnNNNNNNNNNNKKKKKKKKNNNNNNNNNNDK
-KnNNKKKKKKKKqppppppqKKKKKKKKNNDK
-KnNKPPPPPPPpqppppppqpPPPPPPPKNDK
-KnNKPPPPPPPpqppppppqpPPPPPPPKNDK
-KnNKPPBBBPPpqppppppqpKKKPPPPKNDK
-KnNKPBBBBBPpqppGGGpqKRRRKPPPKNDK
-KnNKBBBbBBBpqpGGGGGKRRWRrKPPKNDK
-KnNKBBBBBBbpqGGGgGGKRWWRrKPPKNDK
-KnNKPBBBBbPpqGGGGGgKRRRRrKPPKNDK
-KnNKPPbbPPPpqpGGggpqKRRrKPPPKNDK
-KnNKPPPPPPPpqppgpppqpKrKPPPPKNDK
-KnNKPPPPPPPpqppppppqpPKPPPPPKNDK
-KnNKPPPPPPPpqppppppqpPKKKPPPKNDK
-KnNKPPPGGPPpqpppppRRKKYYYKKPKNDK
-KnNKPPGGGGPpqppppppKYYKKKYYKKNDK
-KnNKPPGGgGPpqpppRpKYYKDRDKYyKNDK
-KnNKPPPggPPpqppRppKYKDRRrDKyKNDK
-KnNKPPPPPPPpqRpppKYKDDRRrDDKyKDK
-KnNKPPPPPRRpRppppKYKDDDYDDDKyKDK
-KnNKPPPPPPPpqppppKYKDDSWsDDKyKDK
-KnNKPPRRPPPpqpppppKYKDDWDDKyKNDK
-KnNKPPPPPPPpqpppppKYYKDWDKyyKNDK
-KnNKPPPPPPPpKKKKKKKKyyKKKyyKKNDK
-KnNNKKKKKKKKNNNNNNNNKKyyyKKKNNDK
-KnNNNNNNNNNNNNNNNNNNNNKKKNNNNNDK
-KnNNNNNNNNNNNNNNNNNNNNNNNNNNNNDK
-.KDDDDDDDDDDDDDDDDDDDDDDDDDDDDK.
-..KKKKKKKKKKKKKKKKKKKKKKKKKKKK..
-""")
-
-
 def main():
     fill, shade, ring = waypoint_textures()
     png(os.path.join(OUT, "waypoint.png"), fill)
@@ -249,13 +214,15 @@ def main():
     png(os.path.join(OUT, "recenter.png"), colors(RECENTER))
     png(os.path.join(OUT, "camp.png"), colors(CAMP))
     png(os.path.join(OUT, "event.png"), colors(EVENT))
-    icon = colors(LOGO)
+    # Mod icon (Mod Menu) and the README images; see art/branding.py.
+    icon = branding.colors(branding.icon())
     png(os.path.join(ASSETS, "icon.png"), icon, scale=4)
     png(os.path.join(ROOT, "docs", "logo.png"), icon, scale=16)
+    png(os.path.join(ROOT, "docs", "banner.png"), branding.colors(branding.banner()), scale=4)
 
     if "--preview" in sys.argv:
         bg = (0x2A, 0x33, 0x3D)
-        png(os.path.join(PREVIEW, "logo.png"), icon, scale=8, background=bg)
+        png(os.path.join(PREVIEW, "icon.png"), icon, scale=8, background=bg)
         for name, g in [("recenter", RECENTER), ("camp", CAMP), ("event", EVENT), ("ring", WAYPOINT_RING)]:
             png(os.path.join(PREVIEW, name + ".png"), colors(g), scale=12, background=bg)
 

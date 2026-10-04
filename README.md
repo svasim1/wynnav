@@ -1,6 +1,4 @@
-<p align="center"><img src="docs/logo.png" width="128" alt="Wynnav logo"></p>
-
-# Wynnav
+<p align="center"><img src="docs/banner.png" width="368" alt="Wynnav"></p>
 
 A world map, minimap and waypoints for Wynncraft. Fabric, Minecraft 1.21.11, client-side.
 
