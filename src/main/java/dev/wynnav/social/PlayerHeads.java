@@ -3,6 +3,7 @@ package dev.wynnav.social;
 import dev.wynnav.Wynnav;
 import dev.wynnav.WynnavClient;
 import dev.wynnav.config.Settings;
+import dev.wynnav.render.Icons;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -71,15 +72,26 @@ public final class PlayerHeads {
 		return result;
 	}
 
-	/** Draws a head centered on a fractional position; heads on another world are faded. */
+	/**
+	 * Draws the 8x8 face centered on (x, y), pixel-perfect like the other sprites (whole screen
+	 * pixels per skin pixel); heads on another world are faded.
+	 */
 	public static void draw(GuiGraphics graphics, Placed placed, float x, float y, int size) {
+		int scale = Icons.guiScale();
+		int k = Icons.pixelScale(8, size);
 		var pose = graphics.pose();
 		pose.pushMatrix();
-		pose.translate(x, y);
+		pose.translate(Math.round(x * scale - 4 * k) / (float) scale, Math.round(y * scale - 4 * k) / (float) scale);
 		int alpha = placed.sameWorld() ? 0xFF : 0x80;
-		int half = size / 2;
-		graphics.fill(-half - 1, -half - 1, size - half + 1, size - half + 1, ARGB.color(alpha, 0x101418));
-		PlayerFaceRenderer.draw(graphics, skin(placed.member().uuid()), -half, -half, size, ARGB.color(alpha, 0xFFFFFF));
+		// One real pixel of dark border around the face.
+		float border = 1f / scale;
+		pose.pushMatrix();
+		pose.translate(-border, -border);
+		pose.scale(border);
+		graphics.fill(0, 0, 8 * k + 2, 8 * k + 2, ARGB.color(alpha, 0x101418));
+		pose.popMatrix();
+		pose.scale(k / (float) scale);
+		PlayerFaceRenderer.draw(graphics, skin(placed.member().uuid()), 0, 0, 8, ARGB.color(alpha, 0xFFFFFF));
 		pose.popMatrix();
 	}
 

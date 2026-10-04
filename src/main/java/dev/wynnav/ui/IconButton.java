@@ -3,7 +3,7 @@ package dev.wynnav.ui;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.renderer.RenderPipelines;
+import dev.wynnav.render.Icons;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 
@@ -23,7 +23,7 @@ final class IconButton extends Button {
 		int contentWidth = 16 + 4 + font.width(getMessage());
 		int left = getX() + (getWidth() - contentWidth) / 2;
 		int iconY = getY() + (getHeight() - 16) / 2;
-		graphics.blit(RenderPipelines.GUI_TEXTURED, icon, left, iconY, 0, 0, 16, 16, 16, 16);
+		Icons.sprite(graphics, icon, left + 8, iconY + 8, 16, 16, 16, 0xFFFFFFFF);
 		graphics.drawString(font, getMessage(), left + 20, getY() + (getHeight() - 8) / 2, active ? 0xFFFFFFFF : 0xFFA0A0A0);
 	}
 }

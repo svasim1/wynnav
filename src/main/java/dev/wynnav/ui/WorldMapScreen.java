@@ -6,6 +6,7 @@ import dev.wynnav.config.Settings;
 import dev.wynnav.map.Content;
 import dev.wynnav.map.Gathering;
 import dev.wynnav.map.MapMarkers;
+import dev.wynnav.map.MarkerIcons;
 import dev.wynnav.map.Places;
 import dev.wynnav.map.Territories;
 import dev.wynnav.render.Icons;
@@ -42,11 +43,7 @@ import org.lwjgl.glfw.GLFW;
  * recenters and follows the player until the map is dragged again.
  */
 public final class WorldMapScreen extends Screen {
-	private static final Identifier PLAYER_ARROW = Wynnav.id("textures/gui/player_arrow.png");
-	private static final Identifier WAYPOINT_ICON = Wynnav.id("textures/gui/waypoint.png");
 	private static final Identifier RECENTER_ICON = Wynnav.id("textures/gui/recenter.png");
-	private static final Identifier CAMP_ICON = Wynnav.id("textures/gui/camp.png");
-	private static final Identifier EVENT_ICON = Wynnav.id("textures/gui/event.png");
 
 	private static final double MIN_ZOOM = 0.05;
 	private static final double MAX_ZOOM = 8;
@@ -606,7 +603,7 @@ public final class WorldMapScreen extends Screen {
 	private void label(GuiGraphics graphics, String text, float x, float y, int color) {
 		var pose = graphics.pose();
 		pose.pushMatrix();
-		pose.translate(x, y);
+		pose.translate(Icons.snap(x), Icons.snap(y));
 		graphics.drawCenteredString(font, text, 0, 0, color);
 		pose.popMatrix();
 	}
@@ -706,7 +703,7 @@ public final class WorldMapScreen extends Screen {
 			}
 			var pose = graphics.pose();
 			pose.pushMatrix();
-			pose.translate(sx, sy);
+			pose.translate(Icons.snap(sx), Icons.snap(sy));
 			pose.scale(scale);
 			graphics.drawCenteredString(font, place.name(), 0, -4, color);
 			if (showLevel && place.level() != null) {
@@ -748,11 +745,11 @@ public final class WorldMapScreen extends Screen {
 			if (sx < -ICON_SIZE || sy < -ICON_SIZE || sx > width + ICON_SIZE || sy > height + ICON_SIZE) {
 				continue;
 			}
-			Identifier icon = WynnavClient.icons().get(marker.icon());
+			MarkerIcons.Icon icon = WynnavClient.icons().get(marker.icon());
 			if (icon != null) {
-				Icons.draw(graphics, icon, sx, sy, ICON_SIZE);
+				Icons.sprite(graphics, icon.texture(), sx, sy, icon.width(), icon.height(), ICON_SIZE, 0xFFFFFFFF);
 			} else {
-				Icons.draw(graphics, WAYPOINT_ICON, sx, sy, 4, 16, 0xFFFFFFFF, 0);
+				Icons.waypoint(graphics, sx, sy, 0xFFFFFFFF, 4, false);
 			}
 		}
 	}
@@ -760,12 +757,13 @@ public final class WorldMapScreen extends Screen {
 	private void renderContent(GuiGraphics graphics, MapView view, Settings.MapLayers layers) {
 		if (layers.camps) {
 			for (Content.Info camp : WynnavClient.content().camps()) {
-				drawContentIcon(graphics, view, camp, CAMP_ICON, 0xFFFFB74D);
+				drawContentIcon(graphics, view, camp, Icons.CAMP, 0xFFFFFFFF);
 			}
 		}
 		if (layers.worldEvents) {
 			for (Content.Info event : WynnavClient.content().worldEvents()) {
-				drawContentIcon(graphics, view, event, EVENT_ICON, event.nextStart() != null ? 0xFFFF5252 : 0xFFFF8A80);
+				// Events with a known start time are shown solid, the rest a little faded.
+				drawContentIcon(graphics, view, event, Icons.EVENT, event.nextStart() != null ? 0xFFFFFFFF : 0xB0FFFFFF);
 			}
 		}
 	}
@@ -779,7 +777,7 @@ public final class WorldMapScreen extends Screen {
 		if (sx < -ICON_SIZE || sy < -ICON_SIZE || sx > width + ICON_SIZE || sy > height + ICON_SIZE) {
 			return;
 		}
-		Icons.draw(graphics, icon, sx, sy, 12, 32, color, 0);
+		Icons.sprite(graphics, icon, sx, sy, 11, 11, 12, color);
 		if (zoom >= 0.6) {
 			label(graphics, info.name(), sx, sy + 8, 0xFFFFFFFF);
 		}
@@ -790,24 +788,22 @@ public final class WorldMapScreen extends Screen {
 			float sx = view.screenX(waypoint.x() + 0.5, waypoint.z() + 0.5);
 			float sy = view.screenY(waypoint.x() + 0.5, waypoint.z() + 0.5);
 			boolean tracked = waypoints.isTracked(waypoint);
-			int size = tracked ? 14 : 10;
-			Icons.draw(graphics, WAYPOINT_ICON, sx, sy, size, 16, waypoint.color(), 0);
+			Icons.waypoint(graphics, sx, sy, waypoint.color(), 10, tracked);
 			if (zoom >= 0.3 || tracked) {
-				label(graphics, waypoint.name(), sx, sy + size / 2f + 2, 0xFFFFFFFF);
+				label(graphics, waypoint.name(), sx, sy + 8, 0xFFFFFFFF);
 			}
 		}
 		// A tracked spot that is not a saved waypoint (e.g. a marker) still gets drawn.
 		waypoints.tracked()
 			.filter(tracked -> waypoints.find(tracked.id()).isEmpty())
-			.ifPresent(tracked -> Icons.draw(graphics, WAYPOINT_ICON, view.screenX(tracked.x() + 0.5, tracked.z() + 0.5),
-				view.screenY(tracked.x() + 0.5, tracked.z() + 0.5), 14, 16, 0xFFFFFFFF, 0));
+			.ifPresent(tracked -> Icons.waypoint(graphics, view.screenX(tracked.x() + 0.5, tracked.z() + 0.5),
+				view.screenY(tracked.x() + 0.5, tracked.z() + 0.5), 0xFFFFFFFF, 10, true));
 	}
 
 	private void renderPlayer(GuiGraphics graphics, MapView view, LocalPlayer player, float partialTick) {
 		Vec3 pos = player.getPosition(partialTick);
-		// Yaw 0 faces south (+Z, down on the map); the arrow texture points up.
-		float rotation = (float) Math.toRadians(player.getViewYRot(partialTick) + 180);
-		Icons.draw(graphics, PLAYER_ARROW, view.screenX(pos.x, pos.z), view.screenY(pos.x, pos.z), 16, 32, 0xFFFFFFFF, rotation);
+		// Yaw 0 faces south (+Z, down on the map), so the heading from north is yaw + 180.
+		Icons.playerArrow(graphics, view.screenX(pos.x, pos.z), view.screenY(pos.x, pos.z), player.getViewYRot(partialTick) + 180, 16);
 	}
 
 	private void renderStatusBar(GuiGraphics graphics, MapView view, int mouseX, int mouseY) {

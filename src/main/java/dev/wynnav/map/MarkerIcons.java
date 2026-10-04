@@ -16,16 +16,19 @@ public final class MarkerIcons {
 	private static final String ICON_BASE_URL = "https://map.wynncraft.com/img/";
 	private static final Duration MAX_AGE = Duration.ofDays(7);
 
-	private final Map<String, Identifier> loaded = new ConcurrentHashMap<>();
+	/** An icon texture and its size, which the map needs to draw it pixel-perfect. */
+	public record Icon(Identifier texture, int width, int height) {}
+
+	private final Map<String, Icon> loaded = new ConcurrentHashMap<>();
 	private final Map<String, Boolean> requested = new ConcurrentHashMap<>();
 
-	/** The icon texture, or null while it is still downloading (or failed). */
-	public @Nullable Identifier get(String icon) {
-		Identifier id = loaded.get(icon);
-		if (id == null && requested.putIfAbsent(icon, Boolean.TRUE) == null) {
+	/** The icon, or null while it is still downloading (or failed). */
+	public @Nullable Icon get(String icon) {
+		Icon loadedIcon = loaded.get(icon);
+		if (loadedIcon == null && requested.putIfAbsent(icon, Boolean.TRUE) == null) {
 			request(icon);
 		}
-		return id;
+		return loadedIcon;
 	}
 
 	private void request(String icon) {
@@ -35,7 +38,7 @@ public final class MarkerIcons {
 		Identifier id = Wynnav.id("icons/" + icon.toLowerCase(Locale.ROOT));
 		CachedFetcher.fetchWithMaxAge(URI.create(ICON_BASE_URL + icon), Wynnav.cacheDir().resolve("icons/" + icon), MAX_AGE)
 			.thenComposeAsync(bytes -> Textures.register(id, bytes), Util.backgroundExecutor())
-			.thenAccept(texture -> loaded.put(icon, texture))
+			.thenAccept(texture -> loaded.put(icon, new Icon(texture.id(), texture.width(), texture.height())))
 			.exceptionally(error -> {
 				Wynnav.LOGGER.warn("Could not load marker icon {}", icon, error);
 				return null;

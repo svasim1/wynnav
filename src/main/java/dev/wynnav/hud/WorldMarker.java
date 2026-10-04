@@ -2,8 +2,8 @@ package dev.wynnav.hud;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import dev.wynnav.Wynnav;
 import dev.wynnav.config.Settings;
+import dev.wynnav.render.Icons;
 import dev.wynnav.waypoint.Waypoint;
 import dev.wynnav.waypoint.Waypoints;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
@@ -13,11 +13,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.blockentity.BeaconRenderer;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
@@ -28,7 +26,6 @@ import org.joml.Vector3fc;
  * with name and distance that shows through walls. Tracking stops when you arrive.
  */
 public final class WorldMarker {
-	private static final Identifier WAYPOINT_ICON = Wynnav.id("textures/gui/waypoint.png");
 	private static final double ARRIVAL_DISTANCE = 4;
 	private static final int FULL_BRIGHT = 0xF000F0;
 	private static final float BEAM_HEIGHT = 1024;
@@ -149,12 +146,11 @@ public final class WorldMarker {
 		String name = target.name();
 		String distance = Math.round(target.distanceFrom(player.getX(), player.getY(), player.getZ())) + "m";
 
+		Icons.waypoint(graphics, sx, sy, ARGB.color(alpha, target.color() & 0xFFFFFF), 12 * size, false);
 		var pose = graphics.pose();
 		pose.pushMatrix();
-		pose.translate(sx, sy);
+		pose.translate(Icons.snap(sx), Icons.snap(sy));
 		pose.scale(size);
-		graphics.blit(RenderPipelines.GUI_TEXTURED, WAYPOINT_ICON, -6, -6, 0, 0, 12, 12, 16, 16, 16, 16,
-			ARGB.color(alpha, target.color() & 0xFFFFFF));
 		int textColor = ARGB.color(alpha, 0xFFFFFF);
 		int nameWidth = font.width(name);
 		int distWidth = font.width(distance);

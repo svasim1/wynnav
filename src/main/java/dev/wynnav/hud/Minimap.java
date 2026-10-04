@@ -1,9 +1,9 @@
 package dev.wynnav.hud;
 
-import dev.wynnav.Wynnav;
 import dev.wynnav.WynnavClient;
 import dev.wynnav.config.Settings;
 import dev.wynnav.map.MapMarkers;
+import dev.wynnav.map.MarkerIcons;
 import dev.wynnav.map.Territories;
 import dev.wynnav.render.MapPainter;
 import dev.wynnav.render.Icons;
@@ -17,14 +17,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 import net.minecraft.world.phys.Vec3;
 
 /** Corner minimap: square or round, north-up or rotating with the player. */
 public final class Minimap {
-	private static final Identifier PLAYER_ARROW = Wynnav.id("textures/gui/player_arrow.png");
-	private static final Identifier WAYPOINT_ICON = Wynnav.id("textures/gui/waypoint.png");
 	private static final int MARGIN = 6;
 	private static final int ICON = 8;
 
@@ -70,9 +67,9 @@ public final class Minimap {
 				}
 				float sx = view.screenX(marker.x() + 0.5, marker.z() + 0.5);
 				float sy = view.screenY(marker.x() + 0.5, marker.z() + 0.5);
-				Identifier icon = WynnavClient.icons().get(marker.icon());
+				MarkerIcons.Icon icon = WynnavClient.icons().get(marker.icon());
 				if (icon != null && insideWithMargin(clip, round, cx, cy, radius, sx, sy)) {
-					Icons.draw(graphics, icon, sx, sy, ICON);
+					Icons.sprite(graphics, icon.texture(), sx, sy, icon.width(), icon.height(), ICON, 0xFFFFFFFF);
 				}
 			}
 		}
@@ -141,11 +138,11 @@ public final class Minimap {
 			sx = cx + dx * scale;
 			sy = cy + dy * scale;
 		}
-		Icons.draw(graphics, WAYPOINT_ICON, sx, sy, size, 16, waypoint.color(), 0);
+		Icons.waypoint(graphics, sx, sy, waypoint.color(), size, false);
 	}
 
 	private static void drawPlayer(GuiGraphics graphics, float cx, float cy, float degrees) {
-		Icons.draw(graphics, PLAYER_ARROW, cx, cy, 10, 32, 0xFFFFFFFF, (float) Math.toRadians(degrees));
+		Icons.playerArrow(graphics, cx, cy, degrees, 10);
 	}
 
 	private record Cardinal(String letter, int dx, int dz, int color) {}
@@ -175,7 +172,7 @@ public final class Minimap {
 			// Out to the border: the circle's edge, or the square's edge along that direction.
 			float scale = round ? radius : radius / Math.max(Math.abs(dir[0]), Math.abs(dir[1]));
 			pose.pushMatrix();
-			pose.translate(cx + dir[0] * scale, cy + dir[1] * scale);
+			pose.translate(Icons.snap(cx + dir[0] * scale), Icons.snap(cy + dir[1] * scale));
 			graphics.fill(-6, -6, 6, 6, 0xFF5A6878);
 			graphics.fill(-5, -5, 5, 5, 0xFF101418);
 			graphics.drawCenteredString(font, cardinal.letter(), 1, -4, cardinal.color());
