@@ -11,17 +11,15 @@ A world map, minimap and waypoints for Wynncraft. Fabric, Minecraft 1.21.11, cli
 - **Layers**: town and area names, official markers, guild territories, gathering nodes, camps and
   world events.
 - **Search** for places, markers and waypoints.
-- **Friends** on the map and minimap (needs your Wynncraft API token, see Settings).
 - **Wynntils import**: Export in Wynntils' waypoint manager, then *Paste Wynntils export* here.
 
 Settings are on the map screen and in Mod Menu.
 
 ## Data
 Terrain tiles come from [Wynntils](https://github.com/Wynntils/Wynntils)' published map; markers,
-territories, gathering nodes, content and friend locations from the
+territories, gathering nodes and content from the
 [Wynncraft API](https://docs.wynncraft.com); place names and icons from the
 [official web map](https://map.wynncraft.com). Everything is cached in `<game dir>/wynnav/cache`.
-Your API token is stored separately in `config/wynnav/api-token.txt` and only sent to Wynncraft.
 
 ## Building
 Gradle needs Java 25 (the mod targets Java 21).

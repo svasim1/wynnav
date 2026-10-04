@@ -3,6 +3,7 @@ package dev.wynnav.ui;
 import dev.wynnav.WynnavClient;
 import dev.wynnav.config.Settings;
 import dev.wynnav.social.ApiToken;
+import dev.wynnav.social.FriendLocations;
 import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.function.DoubleFunction;
@@ -77,19 +78,21 @@ public final class SettingsScreen extends Screen {
 
 		// Friends: a personal Wynncraft API token lets the API report where friends are.
 		int friendsY = top + 5 * ROW + 14;
-		tokenBox = new EditBox(font, columnX[0], friendsY + 12, columnWidth * 2 + 10, 20, Component.literal("API token"));
-		tokenBox.setMaxLength(200);
-		tokenBox.setValue(ApiToken.get());
-		tokenBox.setHint(Component.literal("Paste your Wynncraft API token"));
-		// Never show the token itself on screen (streams, screenshots).
-		tokenBox.addFormatter((text, start) -> FormattedCharSequence.forward("*".repeat(text.length()), Style.EMPTY));
-		addRenderableWidget(tokenBox);
-		addRenderableWidget(Button.builder(Component.literal("Get a token"), button -> ConfirmLinkScreen.confirmLinkNow(this, TOKEN_PAGE))
-			.bounds(columnX[2], friendsY + 12, columnWidth, 20)
-			.build());
+		if (FriendLocations.ENABLED) {
+			tokenBox = new EditBox(font, columnX[0], friendsY + 12, columnWidth * 2 + 10, 20, Component.literal("API token"));
+			tokenBox.setMaxLength(200);
+			tokenBox.setValue(ApiToken.get());
+			tokenBox.setHint(Component.literal("Paste your Wynncraft API token"));
+			// Never show the token itself on screen (streams, screenshots).
+			tokenBox.addFormatter((text, start) -> FormattedCharSequence.forward("*".repeat(text.length()), Style.EMPTY));
+			addRenderableWidget(tokenBox);
+			addRenderableWidget(Button.builder(Component.literal("Get a token"), button -> ConfirmLinkScreen.confirmLinkNow(this, TOKEN_PAGE))
+				.bounds(columnX[2], friendsY + 12, columnWidth, 20)
+				.build());
+		}
 
 		addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> onClose())
-			.bounds(width / 2 - 75, Math.max(friendsY + 50, height - 26), 150, 20)
+			.bounds(width / 2 - 75, Math.max(FriendLocations.ENABLED ? friendsY + 50 : friendsY, height - 26), 150, 20)
 			.build());
 		this.friendsY = friendsY;
 	}
@@ -148,6 +151,9 @@ public final class SettingsScreen extends Screen {
 		for (int i = 0; i < headers.length; i++) {
 			graphics.drawString(font, headers[i], columnX[i], 32, 0xFFFFD866);
 		}
+		if (!FriendLocations.ENABLED) {
+			return;
+		}
 		graphics.drawString(font, "Friends on the map", columnX[0], friendsY, 0xFFFFD866);
 		// Under the token field, where even a long status fits on Minecraft's narrowest screens.
 		String status = font.plainSubstrByWidth(friendsStatus(), width - columnX[0] - 8);
@@ -168,7 +174,7 @@ public final class SettingsScreen extends Screen {
 	@Override
 	public void removed() {
 		settings.save();
-		if (!tokenBox.getValue().strip().equals(ApiToken.get())) {
+		if (tokenBox != null && !tokenBox.getValue().strip().equals(ApiToken.get())) {
 			ApiToken.set(tokenBox.getValue());
 			WynnavClient.friends().refreshSoon();
 		}

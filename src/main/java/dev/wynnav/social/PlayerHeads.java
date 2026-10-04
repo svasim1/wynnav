@@ -46,6 +46,9 @@ public final class PlayerHeads {
 	 * live, smoothly interpolated position; everyone else at the last position from the API.
 	 */
 	public static List<Placed> visible(float partialTick) {
+		if (!FriendLocations.ENABLED) {
+			return List.of();
+		}
 		Settings.MapLayers layers = Settings.get().layers;
 		FriendLocations locations = WynnavClient.friends();
 		Minecraft minecraft = Minecraft.getInstance();

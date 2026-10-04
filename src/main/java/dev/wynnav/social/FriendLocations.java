@@ -26,6 +26,13 @@ import org.jspecify.annotations.Nullable;
  * {@link PlayerHeads#visible}).
  */
 public final class FriendLocations {
+	/**
+	 * Off until Wynncraft's API serves this route to API tokens: as of October 2026 the live route
+	 * only accepts the website's own login session (it answers token requests with a CSRF error).
+	 * While off, nothing is requested and no friends UI is shown.
+	 */
+	public static final boolean ENABLED = false;
+
 	private static final URI LOCATIONS_URI = URI.create("https://api.wynncraft.com/v3/map/locations/player");
 	private static final long POLL_MS = 15_000;
 	// When Wynncraft refuses token access to this route, check again only now and then.
@@ -63,6 +70,9 @@ public final class FriendLocations {
 
 	/** Call every client tick; polls while in game and a token is set. */
 	public void tick(boolean inGame) {
+		if (!ENABLED) {
+			return;
+		}
 		if (!ApiToken.isSet()) {
 			status = Status.NO_TOKEN;
 			return;
