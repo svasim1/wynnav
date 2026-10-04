@@ -46,6 +46,9 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 java {
+	// A -sources jar is attached to each GitHub release, next to the mod jar.
+	withSourcesJar()
+
 	sourceCompatibility = JavaVersion.VERSION_21
 	targetCompatibility = JavaVersion.VERSION_21
 }
